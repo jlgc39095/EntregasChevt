@@ -46,7 +46,7 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transform: scale(1.1); /* Slight overscale to prevent edges during expansion */
+            transform: scale(1.1);
         }
 
         .hero-text {
@@ -85,7 +85,6 @@
             background: #94a3b8;
         }
 
-        /* Modals and Toasts */
         .glass-panel {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
@@ -101,19 +100,18 @@
     <!-- GSAP Parallax Hero Section -->
     <section class="hero-container" id="hero-section">
         <div class="hero-image-wrapper" id="hero-image-wrapper">
-            <!-- Using a high quality placeholder for the expanding effect -->
             <img src="https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=2000&auto=format&fit=crop" class="hero-image" alt="Office CRM">
         </div>
         <div class="hero-text" id="hero-text">
             <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight mb-4 drop-shadow-lg">CRM Portal</h1>
-            <p class="text-xl md:text-2xl font-light opacity-90 drop-shadow-md">Gestión de Expedientes y Citas</p>
+            <p class="text-xl md:text-2xl font-light opacity-90 drop-shadow-md">Gestión de Expedientes y Entregas</p>
         </div>
         <div class="scroll-indicator">
             <i class="ph ph-caret-double-down text-3xl opacity-70"></i>
         </div>
     </section>
 
-    <!-- Main App Section (Appears after scroll) -->
+    <!-- Main App Section -->
     <section class="min-h-screen relative z-20 bg-slate-50 rounded-t-[40px] -mt-10 p-6 md:p-12 shadow-[0_-10px_40px_rgba(0,0,0,0.1)]" id="main-app">
         
         <!-- Loading State -->
@@ -135,6 +133,10 @@
                     <button onclick="openAdminLoginModal()" class="w-full flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-white py-3 px-4 rounded-xl transition-all font-semibold shadow-lg hover:shadow-xl hover:-translate-y-0.5">
                         <i class="ph ph-shield-check text-xl"></i> Entrar como Administrador
                     </button>
+
+                    <button onclick="loginAs('previa')" class="w-full flex items-center justify-center gap-2 bg-teal-600 hover:bg-teal-700 text-white py-3 px-4 rounded-xl transition-all font-semibold shadow-lg hover:shadow-xl hover:-translate-y-0.5">
+                        <i class="ph ph-wrench text-xl"></i> Entrar a Previa (Taller)
+                    </button>
                     
                     <div class="relative py-3">
                         <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-200"></div></div>
@@ -148,19 +150,50 @@
             </div>
         </div>
 
-        <!-- Dashboard Administrador -->
-        <div id="admin-dashboard" class="hidden max-w-6xl mx-auto space-y-8">
+        <!-- Dashboard Previa -->
+        <div id="previa-dashboard" class="hidden max-w-6xl mx-auto space-y-8">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
                 <div>
-                    <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2"><i class="ph ph-shield-star text-indigo-600"></i> Panel de Administración</h2>
-                    <p class="text-slate-500 text-sm">Gestiona expedientes y libera horarios de citas.</p>
+                    <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2"><i class="ph ph-wrench text-teal-600"></i> Departamento de Previa</h2>
+                    <p class="text-slate-500 text-sm">Calendario general de preparaciones y accesorios.</p>
                 </div>
                 <button onclick="logout()" class="mt-4 md:mt-0 text-slate-500 hover:text-slate-800 flex items-center gap-1 transition-colors px-4 py-2 bg-slate-100 rounded-lg hover:bg-slate-200">
                     <i class="ph ph-sign-out"></i> Salir
                 </button>
             </div>
 
-            <!-- Sección de Creación de Datos -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
+                    <h3 class="text-lg font-bold text-slate-800 flex flex-wrap items-center gap-2">
+                        <i class="ph ph-calendar-grid text-teal-500 text-xl"></i> Calendario de Preparación
+                        <span id="previa-calendar-month-label" class="text-sm font-medium text-teal-600 bg-teal-50 border border-teal-100 px-3 py-1 rounded-full shadow-sm ml-2"></span>
+                    </h3>
+                    <div class="flex items-center gap-2">
+                        <button onclick="changePreviaWeekView(-7)" class="text-slate-500 hover:bg-slate-100 p-2 rounded-full transition-colors"><i class="ph ph-caret-left text-lg"></i></button>
+                        <button onclick="resetPreviaToToday()" class="text-sm font-medium text-slate-600 hover:bg-slate-100 px-3 py-1 rounded-md border border-slate-200 transition-colors shadow-sm">Hoy</button>
+                        <button onclick="changePreviaWeekView(7)" class="text-slate-500 hover:bg-slate-100 p-2 rounded-full transition-colors"><i class="ph ph-caret-right text-lg"></i></button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto pb-4">
+                    <div id="previa-calendar-grid" class="flex gap-2 min-w-[900px]">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Administrador -->
+        <div id="admin-dashboard" class="hidden max-w-6xl mx-auto space-y-8">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2"><i class="ph ph-shield-star text-indigo-600"></i> Panel de Administración</h2>
+                    <p class="text-slate-500 text-sm">Gestiona expedientes y libera horarios de entregas.</p>
+                </div>
+                <button onclick="logout()" class="mt-4 md:mt-0 text-slate-500 hover:text-slate-800 flex items-center gap-1 transition-colors px-4 py-2 bg-slate-100 rounded-lg hover:bg-slate-200">
+                    <i class="ph ph-sign-out"></i> Salir
+                </button>
+            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <!-- Gestión de Asesores -->
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col">
@@ -185,6 +218,7 @@
                             <input type="text" id="new-exp-inventario" placeholder="Inventario (Ej. VIN/Lote)" class="flex-1 min-w-0 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
                             <input type="text" id="new-exp-num-cliente" placeholder="No. Cliente" class="flex-1 min-w-0 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
                         </div>
+                        <input type="text" id="new-exp-accesorios" placeholder="Accesorios (Ej. Tapetes, Polarizado...)" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
                         <div class="flex gap-2 w-full">
                             <select id="new-exp-origen" onchange="togglePrecioTraslado()" class="flex-1 min-w-0 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white">
                                 <option value="planta">De Planta</option>
@@ -206,18 +240,17 @@
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <!-- Gestión de Expedientes (Simula el Sheet) -->
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <!-- Gestión de Expedientes -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col">
                     <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><i class="ph ph-folder-open text-blue-500"></i> Estado de Expedientes</h3>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
+                    <div class="overflow-x-auto flex-1">
+                        <table class="w-full text-left border-collapse min-w-[500px]">
                             <thead>
                                 <tr class="border-b border-slate-200 text-slate-500 text-sm">
-                                    <th class="pb-3 font-semibold">Asesor</th>
-                                    <th class="pb-3 font-semibold">Cliente (Detalles)</th>
-                                    <th class="pb-3 font-semibold">Comentarios</th>
-                                    <th class="pb-3 font-semibold text-center">Acciones</th>
-                                    <th class="pb-3 font-semibold text-center">Listo para agendar</th>
+                                    <th class="pb-3 font-semibold w-1/4">Asesor</th>
+                                    <th class="pb-3 font-semibold w-2/5">Cliente (Detalles)</th>
+                                    <th class="pb-3 font-semibold w-1/5 text-center">Notas / Editar</th>
+                                    <th class="pb-3 font-semibold w-1/5 text-center">Listo</th>
                                 </tr>
                             </thead>
                             <tbody id="admin-asesores-list">
@@ -228,10 +261,10 @@
                 </div>
 
                 <!-- Gestión de Citas -->
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col">
                     <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><i class="ph ph-calendar-check text-green-500"></i> Entregas Programadas</h3>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
+                    <div class="overflow-x-auto flex-1">
+                        <table class="w-full text-left border-collapse min-w-[400px]">
                             <thead>
                                 <tr class="border-b border-slate-200 text-slate-500 text-sm">
                                     <th class="pb-3 font-semibold">Asesor / Cliente</th>
@@ -247,11 +280,12 @@
                 </div>
             </div>
 
-            <!-- Calendario General de Entregas (Admin) -->
+            <!-- Calendario General (Admin) -->
             <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
                 <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
-                    <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <h3 class="text-lg font-bold text-slate-800 flex flex-wrap items-center gap-2">
                         <i class="ph ph-calendar-grid text-purple-500 text-xl"></i> Calendario General de Entregas
+                        <span id="admin-calendar-month-label" class="text-sm font-medium text-purple-600 bg-purple-50 border border-purple-100 px-3 py-1 rounded-full shadow-sm ml-2"></span>
                     </h3>
                     <div class="flex items-center gap-2">
                         <button onclick="changeAdminWeekView(-7)" class="text-slate-500 hover:bg-slate-100 p-2 rounded-full transition-colors"><i class="ph ph-caret-left text-lg"></i></button>
@@ -276,14 +310,14 @@
                         <i class="ph ph-user-circle text-blue-600"></i> 
                         Hola, <span id="current-asesor-name">Asesor</span>
                     </h2>
-                    <p class="text-slate-500 text-sm">Selecciona un cliente con expediente completo para agendar su cita.</p>
+                    <p class="text-slate-500 text-sm">Selecciona un cliente con expediente completo para agendar su entrega.</p>
                 </div>
                 <button onclick="logout()" class="mt-4 md:mt-0 text-slate-500 hover:text-slate-800 flex items-center gap-1 transition-colors px-4 py-2 bg-slate-100 rounded-lg hover:bg-slate-200">
                     <i class="ph ph-sign-out"></i> Cambiar Usuario
                 </button>
             </div>
 
-            <!-- Lista de Expedientes del Asesor -->
+            <!-- Lista de Expedientes -->
             <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
                 <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><i class="ph ph-users text-blue-500"></i> Mis Clientes (Expedientes)</h3>
                 <div id="asesor-expedientes-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -291,56 +325,45 @@
                 </div>
             </div>
 
-            <!-- Contenedor Principal Bloqueable (Calendario) -->
+            <!-- Calendario para agendar -->
             <div class="relative mt-8">
-                <!-- Overlay if blocked -->
                 <div id="agendar-overlay" class="absolute inset-0 bg-slate-50/80 backdrop-blur-[2px] z-20 flex flex-col items-center justify-center p-6 text-center rounded-2xl transition-all">
                     <i class="ph ph-lock-key text-4xl text-slate-400 mb-2"></i>
                     <p class="text-slate-600 font-medium text-sm">Selecciona un cliente de tu lista superior que esté "Listo para agendar".</p>
                 </div>
 
-                <!-- Cabecera de Selección -->
                 <div class="bg-blue-600 p-4 rounded-t-2xl border-b-0 flex flex-col md:flex-row items-center justify-between gap-4 text-white shadow-md">
                     <div class="flex items-center gap-2 font-medium">
                         <i class="ph ph-calendar-plus text-2xl"></i>
-                        <span>Agendando cita para: <strong id="active-client-label" class="text-lg ml-1 text-blue-100">Ninguno</strong></span>
+                        <span>Agendando entrega para: <strong id="active-client-label" class="text-lg ml-1 text-blue-100">Ninguno</strong></span>
                     </div>
                     <button onclick="cancelarSeleccionCliente()" class="text-sm bg-blue-700 hover:bg-blue-800 px-3 py-1.5 rounded-lg transition-colors border border-blue-500 hidden" id="btn-cancel-client">
                         Cancelar selección
                     </button>
                 </div>
 
-                <!-- Interfaz tipo Google Calendar -->
                 <div class="bg-white border border-slate-200 rounded-b-2xl p-6 shadow-sm overflow-hidden flex flex-col lg:flex-row gap-8">
                     
-                    <!-- Columna Izquierda: Mini Calendario -->
                     <div class="w-full lg:w-64 flex-shrink-0">
                         <h3 class="text-lg font-medium text-slate-800 mb-6">Select an appointment time</h3>
                         
-                        <!-- Mini Calendar Header -->
                         <div class="flex items-center justify-between mb-4">
-                            <h4 id="mini-cal-month-year" class="text-sm font-medium text-slate-700">Noviembre 2026</h4>
+                            <h4 id="mini-cal-month-year" class="text-sm font-medium text-slate-700"></h4>
                             <div class="flex gap-2 text-slate-500">
                                 <button onclick="changeMiniCalMonth(-1)" class="hover:bg-slate-100 p-1 rounded-full transition-colors"><i class="ph ph-caret-left"></i></button>
                                 <button onclick="changeMiniCalMonth(1)" class="hover:bg-slate-100 p-1 rounded-full transition-colors"><i class="ph ph-caret-right"></i></button>
                             </div>
                         </div>
 
-                        <!-- Mini Calendar Grid -->
                         <div class="grid grid-cols-7 gap-y-2 text-center text-xs">
-                            <!-- Days Header -->
                             <div class="text-slate-400 mb-1">D</div><div class="text-slate-400 mb-1">L</div><div class="text-slate-400 mb-1">M</div>
                             <div class="text-slate-400 mb-1">M</div><div class="text-slate-400 mb-1">J</div><div class="text-slate-400 mb-1">V</div><div class="text-slate-400 mb-1">S</div>
                             
-                            <!-- Generado por JS -->
                             <div id="mini-cal-grid" class="col-span-7 grid grid-cols-7 gap-y-1 gap-x-1"></div>
                         </div>
                     </div>
 
-                    <!-- Columna Derecha: Vista Semanal -->
                     <div class="flex-1 overflow-x-auto min-h-[400px]">
-                        
-                        <!-- Week Navigation Header -->
                         <div class="flex items-center justify-between min-w-[600px] mb-4 pl-4 pr-2">
                             <div class="flex items-center gap-4">
                                 <button onclick="changeWeekView(-7)" class="text-slate-500 hover:bg-slate-100 p-2 rounded-full transition-colors"><i class="ph ph-caret-left text-lg"></i></button>
@@ -352,7 +375,6 @@
                             </div>
                         </div>
 
-                        <!-- Grid de Días (7 columnas) -->
                         <div id="week-columns" class="flex gap-2 min-w-[600px]">
                             <!-- Generado por JS -->
                         </div>
@@ -373,16 +395,16 @@
                     <!-- Populated by JS -->
                 </div>
             </div>
-
         </div>
 
     </section>
 
-    <!-- Modal de Confirmación para Agendar -->
-    <div id="confirm-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm">
+    <!-- Modals -->
+    <!-- Modal Confirmar Cita -->
+    <div id="confirm-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm">
         <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl transform transition-all scale-95 opacity-0" id="confirm-modal-content">
-            <h3 class="text-xl font-bold text-slate-800 mb-2">Confirmar Cita</h3>
-            <p class="text-slate-600 text-sm mb-4">Estás a punto de agendar una cita para el cliente <strong id="modal-cliente-txt" class="text-slate-800"></strong>.</p>
+            <h3 class="text-xl font-bold text-slate-800 mb-2">Confirmar Entrega</h3>
+            <p class="text-slate-600 text-sm mb-4">Estás a punto de agendar una entrega para el cliente <strong id="modal-cliente-txt" class="text-slate-800"></strong>.</p>
             
             <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 mb-6 flex flex-col gap-1">
                 <div class="flex items-center gap-2 text-slate-700">
@@ -402,12 +424,26 @@
         </div>
     </div>
 
-    <!-- Modal de Confirmación para Eliminar Asesor -->
-    <div id="delete-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm">
+    <!-- Modal Cancelar Cita (Global) -->
+    <div id="cancel-cita-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl transform transition-all scale-95 opacity-0" id="cancel-cita-modal-content">
+            <h3 class="text-xl font-bold text-slate-800 mb-2 text-red-600 flex items-center gap-2"><i class="ph ph-warning-circle"></i> Cancelar Entrega</h3>
+            <p class="text-slate-600 text-sm mb-6">¿Estás seguro de que deseas liberar esta hora de entrega? Esta acción no se puede deshacer.</p>
+            
+            <div class="flex justify-end gap-3">
+                <button onclick="closeCancelCitaModal()" class="px-4 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition-colors">Atrás</button>
+                <button onclick="executeCancelCita()" class="px-4 py-2 bg-red-600 text-white font-medium hover:bg-red-700 rounded-lg shadow-md transition-colors flex items-center gap-2">
+                    <i class="ph ph-trash"></i> Cancelar Entrega
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Eliminar Asesor -->
+    <div id="delete-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm">
         <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl transform transition-all scale-95 opacity-0" id="delete-modal-content">
             <h3 class="text-xl font-bold text-slate-800 mb-2">Eliminar Asesor</h3>
             <p class="text-slate-600 text-sm mb-6">¿Estás seguro de que deseas eliminar este asesor de forma permanente?</p>
-            
             <div class="flex justify-end gap-3">
                 <button onclick="closeDeleteModal()" class="px-4 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition-colors">Cancelar</button>
                 <button onclick="executeDeleteAsesor()" class="px-4 py-2 bg-red-600 text-white font-medium hover:bg-red-700 rounded-lg shadow-md transition-colors flex items-center gap-2">
@@ -417,12 +453,62 @@
         </div>
     </div>
 
-    <!-- Modal de Login Admin -->
-    <div id="admin-login-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm">
+    <!-- Modal Eliminar Expediente -->
+    <div id="delete-exp-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl transform transition-all scale-95 opacity-0" id="delete-exp-modal-content">
+            <h3 class="text-xl font-bold text-slate-800 mb-2">Eliminar Expediente</h3>
+            <p class="text-slate-600 text-sm mb-6">¿Estás seguro de que deseas eliminar este expediente? Si tiene una cita agendada, también será cancelada.</p>
+            <div class="flex justify-end gap-3">
+                <button onclick="closeDeleteExpModal()" class="px-4 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition-colors">Cancelar</button>
+                <button onclick="executeDeleteExpediente()" class="px-4 py-2 bg-red-600 text-white font-medium hover:bg-red-700 rounded-lg shadow-md transition-colors flex items-center gap-2">
+                    <i class="ph ph-trash"></i> Eliminar Todo
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Editar Expediente -->
+    <div id="edit-exp-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl transform transition-all scale-95 opacity-0" id="edit-exp-modal-content">
+            <h3 class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2"><i class="ph ph-pencil-simple text-blue-600"></i> Editar Expediente</h3>
+            
+            <div class="flex flex-col gap-3 mb-6">
+                <input type="text" id="edit-exp-cliente" placeholder="Nombre del Cliente" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                <div class="flex gap-2 w-full">
+                    <input type="text" id="edit-exp-inventario" placeholder="Inventario (Ej. VIN/Lote)" class="flex-1 min-w-0 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                    <input type="text" id="edit-exp-num-cliente" placeholder="No. Cliente" class="flex-1 min-w-0 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                </div>
+                <input type="text" id="edit-exp-accesorios" placeholder="Accesorios (Ej. Tapetes, Polarizado...)" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                <div class="flex gap-2 w-full">
+                    <select id="edit-exp-origen" onchange="toggleEditPrecioTraslado()" class="flex-1 min-w-0 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white">
+                        <option value="planta">De Planta</option>
+                        <option value="intercambio">De Intercambio</option>
+                    </select>
+                    <div id="edit-container-precio" class="hidden flex-1 min-w-0">
+                        <input type="number" id="edit-exp-precio" placeholder="Precio ($)" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                    </div>
+                </div>
+                <div>
+                    <select id="edit-exp-asesor" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white">
+                        <!-- Populated dynamic -->
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3">
+                <button onclick="closeEditExpModal()" class="px-4 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition-colors">Cancelar</button>
+                <button onclick="executeEditExpediente()" class="px-4 py-2 bg-blue-600 text-white font-medium hover:bg-blue-700 rounded-lg shadow-md transition-colors flex items-center gap-2">
+                    <i class="ph ph-floppy-disk"></i> Guardar Cambios
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Login Admin -->
+    <div id="admin-login-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm">
         <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl transform transition-all scale-95 opacity-0" id="admin-login-modal-content">
             <h3 class="text-xl font-bold text-slate-800 mb-2">Acceso Administrativo</h3>
             <p class="text-slate-600 text-sm mb-4">Ingresa tus credenciales para continuar.</p>
-            
             <div class="space-y-4 mb-6">
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">Usuario</label>
@@ -433,7 +519,6 @@
                     <input type="password" id="admin-pass" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" placeholder="••••••••">
                 </div>
             </div>
-
             <div class="flex justify-end gap-3">
                 <button onclick="closeAdminLoginModal()" class="px-4 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition-colors">Cancelar</button>
                 <button onclick="verifyAdminCredentials()" class="px-4 py-2 bg-slate-900 text-white font-medium hover:bg-slate-800 rounded-lg shadow-md transition-colors">
@@ -443,17 +528,15 @@
         </div>
     </div>
 
-    <!-- Modal de Comentarios para Expediente -->
-    <div id="comentarios-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm">
+    <!-- Modal Comentarios -->
+    <div id="comentarios-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm">
         <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl transform transition-all scale-95 opacity-0" id="comentarios-modal-content">
             <h3 class="text-xl font-bold text-slate-800 mb-2">Comentarios del Expediente</h3>
-            <p class="text-slate-600 text-sm mb-4">Añade notas para el asesor (ej. documentos faltantes, firmas requeridas).</p>
-            
+            <p class="text-slate-600 text-sm mb-4">Añade notas para el asesor (ej. documentos faltantes).</p>
             <input type="hidden" id="comentarios-exp-id">
             <div class="mb-6">
-                <textarea id="comentarios-texto" rows="4" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" placeholder="Escribe aquí los comentarios (ej. Falta firma de aval)..."></textarea>
+                <textarea id="comentarios-texto" rows="4" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" placeholder="Escribe aquí los comentarios..."></textarea>
             </div>
-
             <div class="flex justify-end gap-3">
                 <button onclick="closeComentariosModal()" class="px-4 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition-colors">Cancelar</button>
                 <button onclick="saveComentarios()" class="px-4 py-2 bg-blue-600 text-white font-medium hover:bg-blue-700 rounded-lg shadow-md transition-colors flex items-center gap-2">
@@ -463,74 +546,13 @@
         </div>
     </div>
 
-    <!-- Modal Eliminar Cita -->
-    <div id="delete-cita-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm">
-        <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl transform transition-all scale-95 opacity-0" id="delete-cita-modal-content">
-            <h3 class="text-xl font-bold text-slate-800 mb-2">Cancelar Cita</h3>
-            <p class="text-slate-600 text-sm mb-6">¿Estás seguro de que deseas liberar este horario y cancelar la cita programada?</p>
-            <div class="flex justify-end gap-3">
-                <button onclick="closeDeleteCitaModal()" class="px-4 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition-colors">Volver</button>
-                <button onclick="executeDeleteCita()" class="px-4 py-2 bg-red-600 text-white font-medium hover:bg-red-700 rounded-lg shadow-md transition-colors flex items-center gap-2">
-                    <i class="ph ph-trash"></i> Cancelar Cita
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Eliminar Expediente -->
-    <div id="delete-exp-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm">
-        <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl transform transition-all scale-95 opacity-0" id="delete-exp-modal-content">
-            <h3 class="text-xl font-bold text-slate-800 mb-2">Eliminar Expediente</h3>
-            <p class="text-slate-600 text-sm mb-6">¿Deseas eliminar este expediente y todas sus citas asociadas de forma permanente?</p>
-            <div class="flex justify-end gap-3">
-                <button onclick="closeDeleteExpedienteModal()" class="px-4 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition-colors">Cancelar</button>
-                <button onclick="executeDeleteExpediente()" class="px-4 py-2 bg-red-600 text-white font-medium hover:bg-red-700 rounded-lg shadow-md transition-colors flex items-center gap-2">
-                    <i class="ph ph-trash"></i> Eliminar
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Editar Expediente -->
-    <div id="edit-exp-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm">
-        <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl transform transition-all scale-95 opacity-0" id="edit-exp-modal-content">
-            <h3 class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2"><i class="ph ph-pencil-simple text-blue-500"></i> Editar Expediente</h3>
-            <div class="flex flex-col gap-3 mb-6">
-                <input type="text" id="edit-exp-cliente" placeholder="Nombre del Cliente / Folio" class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 w-full">
-                <div class="flex gap-2 w-full">
-                    <input type="text" id="edit-exp-inventario" placeholder="Inventario (Ej. VIN/Lote)" class="flex-1 min-w-0 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
-                    <input type="text" id="edit-exp-num-cliente" placeholder="No. Cliente" class="flex-1 min-w-0 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
-                </div>
-                <div class="flex gap-2 w-full">
-                    <select id="edit-exp-origen" onchange="toggleEditPrecioTraslado()" class="flex-1 min-w-0 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white">
-                        <option value="planta">De Planta</option>
-                        <option value="intercambio">De Intercambio</option>
-                    </select>
-                    <div id="edit-container-precio-traslado" class="hidden flex-1 min-w-0">
-                        <input type="number" id="edit-exp-precio" placeholder="Precio Traslado ($)" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
-                    </div>
-                </div>
-                <select id="edit-exp-asesor" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white">
-                    <option value="">Selecciona un Asesor...</option>
-                </select>
-            </div>
-            <div class="flex justify-end gap-3">
-                <button onclick="closeEditExpedienteModal()" class="px-4 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition-colors">Cancelar</button>
-                <button onclick="saveEditExpediente()" class="px-4 py-2 bg-blue-600 text-white font-medium hover:bg-blue-700 rounded-lg shadow-md transition-colors flex items-center gap-2">
-                    <i class="ph ph-floppy-disk"></i> Guardar Cambios
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Storage & Application Logic -->
+    <!-- Scripts -->
     <script>
         // ==========================================
         // UI & GSAP Initialization
         // ==========================================
         gsap.registerPlugin(ScrollTrigger);
 
-        // Parallax Effect for Hero
         const tl = gsap.timeline({
             scrollTrigger: {
                 trigger: "#hero-section",
@@ -542,14 +564,11 @@
             }
         });
 
-        // Expand image to cover screen and fade out text
         tl.to("#hero-image-wrapper", { width: "100vw", height: "100vh", borderRadius: "0px", ease: "power1.inOut" }, 0)
           .to("#hero-text", { opacity: 0, y: -50, ease: "power1.in" }, 0)
           .to(".scroll-indicator", { opacity: 0 }, 0)
           .to(".hero-image", { scale: 1 }, 0); 
 
-
-        // Utility: Toast Notifications (No alert() rule)
         window.showToast = (msg, type = 'info') => {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
@@ -564,12 +583,10 @@
             
             container.appendChild(toast);
             
-            // Animate in
             requestAnimationFrame(() => {
                 toast.classList.remove('translate-x-full', 'opacity-0');
             });
 
-            // Remove after 3s
             setTimeout(() => {
                 toast.classList.add('opacity-0', 'translate-x-full');
                 setTimeout(() => toast.remove(), 300);
@@ -577,29 +594,23 @@
         };
 
         // ==========================================
-        // LocalStorage Setup & State Management
+        // Data Management (LocalStorage + Drive Fallback)
         // ==========================================
         
-        // Generador de IDs únicos
         const generateId = () => Math.random().toString(36).substring(2, 15);
-
-        // Claves de guardado
         const LS_ASESORES = 'crm_asesores_v1';
         const LS_EXPEDIENTES = 'crm_expedientes_v1';
         const LS_CITAS = 'crm_citas_v1';
+        
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzb1dh4Xg2Xwd8OoMHjXGwp7z7rTcppz20UJ0PSqoFu9ijSD9U--Dp13jKAXRiWq_wohg/exec";
 
-        // URL de Google Apps Script (Base de datos en Drive)
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzb1dh4Xg2Xwd8OoMHjXGwp7z7rTcppz20UJ0PSqoFu9ijSD9U--Dp13jKAXRiWq_wohg/exec"; 
-
-        // Global State
         let allAsesores = [];
         let allExpedientes = [];
         let allCitas = [];
         
-        let currentUserRole = null; // 'admin' | 'asesor'
-        let currentAsesor = null; // Object if role is asesor
+        let currentUserRole = null; 
+        let currentAsesor = null; 
         
-        // Estado del Calendario
         const getLocalISODate = (date) => {
             const offset = date.getTimezoneOffset();
             const localDate = new Date(date.getTime() - (offset*60*1000));
@@ -611,80 +622,101 @@
         let viewDate = new Date();
         let miniCalDate = new Date();
         let adminViewDate = new Date(); 
+        let previaViewDate = new Date();
         
-        // Selección para agendar / Estados de Edición y Borrado
         let activeExpedienteId = null;
         let activeExpedienteNombre = null;
         let pendingCita = null; 
+        let pendingCancelCitaId = null;
         let pendingDeleteAsesorId = null;
-        let pendingDeleteCitaId = null;
-        let pendingDeleteExpedienteId = null;
-        let editingExpedienteId = null;
+        let pendingDeleteExpId = null;
+        let pendingEditExpId = null;
 
-        // Cargar datos (De Drive o Local)
         async function loadData() {
+            // 1. Cargar datos locales de respaldo primero
+            let localAsesores = [];
+            let localExpedientes = [];
+            let localCitas = [];
+            try {
+                localAsesores = JSON.parse(localStorage.getItem(LS_ASESORES)) || [];
+                localExpedientes = JSON.parse(localStorage.getItem(LS_EXPEDIENTES)) || [];
+                localCitas = JSON.parse(localStorage.getItem(LS_CITAS)) || [];
+            } catch(e) {
+                console.error("Error leyendo caché local:", e);
+            }
+
             if (GOOGLE_SCRIPT_URL) {
                 try {
-                    // Agregar un límite de tiempo (8 segundos) por si Google Drive no responde
                     const controller = new AbortController();
                     const timeoutId = setTimeout(() => controller.abort(), 8000);
-                    
                     const response = await fetch(GOOGLE_SCRIPT_URL, { signal: controller.signal });
-                    clearTimeout(timeoutId); // Limpiar el límite si respondió a tiempo
+                    clearTimeout(timeoutId); 
                     
-                    if (!response.ok) throw new Error("Error HTTP " + response.status);
+                    if (!response.ok) throw new Error("HTTP " + response.status);
                     
                     const data = await response.json();
                     
+                    // Comprobación Anti-Borrado:
+                    const cloudIsEmpty = (!data.asesores || data.asesores.length === 0) && 
+                                         (!data.expedientes || data.expedientes.length === 0) && 
+                                         (!data.citas || data.citas.length === 0);
+                    
+                    const localHasData = localAsesores.length > 0 || localExpedientes.length > 0 || localCitas.length > 0;
+
+                    // Si la nube está vacía pero la máquina local tiene datos, RESCATAR datos locales.
+                    if (cloudIsEmpty && localHasData) {
+                        console.warn("Nube vacía detectada. Restaurando desde la copia de seguridad local...");
+                        allAsesores = localAsesores;
+                        allExpedientes = localExpedientes;
+                        allCitas = localCitas;
+                        
+                        // Forzar a que los datos locales se resuban a Google Drive para restaurar la nube
+                        setTimeout(saveData, 1000);
+                        return;
+                    }
+
+                    // Si todo está bien, usar los datos de la nube
                     allAsesores = data.asesores || [];
                     allExpedientes = data.expedientes || [];
                     allCitas = data.citas || [];
                     
-                    // Crea un respaldo local por si se pierde el internet después
                     localStorage.setItem(LS_ASESORES, JSON.stringify(allAsesores));
                     localStorage.setItem(LS_EXPEDIENTES, JSON.stringify(allExpedientes));
                     localStorage.setItem(LS_CITAS, JSON.stringify(allCitas));
                     return;
                 } catch (error) {
-                    console.warn("Fallo al conectar con Google Drive, usando almacenamiento local:", error);
+                    console.warn("Fallo Drive, usando almacenamiento local:", error);
                 }
             }
             
-            // Fallback
-            try {
-                allAsesores = JSON.parse(localStorage.getItem(LS_ASESORES)) || [];
-                allExpedientes = JSON.parse(localStorage.getItem(LS_EXPEDIENTES)) || [];
-                allCitas = JSON.parse(localStorage.getItem(LS_CITAS)) || [];
-            } catch(e) {
-                console.error("Error leyendo LocalStorage:", e);
-                allAsesores = [];
-                allExpedientes = [];
-                allCitas = [];
-            }
+            // Fallback: Si no hay internet o no hay URL, usar los locales
+            allAsesores = localAsesores;
+            allExpedientes = localExpedientes;
+            allCitas = localCitas;
         }
 
-        // Guardar datos y actualizar vistas
         function saveData() {
+            // Guardar localmente
             localStorage.setItem(LS_ASESORES, JSON.stringify(allAsesores));
             localStorage.setItem(LS_EXPEDIENTES, JSON.stringify(allExpedientes));
             localStorage.setItem(LS_CITAS, JSON.stringify(allCitas));
             updateViews();
 
+            // Guardar en Google Drive
             if (GOOGLE_SCRIPT_URL) {
                 const payload = { asesores: allAsesores, expedientes: allExpedientes, citas: allCitas };
-                
                 fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'text/plain' },
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify(payload)
-                }).catch(error => console.error("Error sincronizando con Drive:", error));
+                }).catch(e => console.error("Error sincronizando con Google Drive:", e));
             }
         }
 
         function updateViews() {
             if (!currentUserRole) renderLoginList();
             if (currentUserRole === 'admin') renderAdminDashboard();
+            if (currentUserRole === 'previa') renderPreviaDashboard();
             if (currentUserRole === 'asesor') {
                 updateAsesorState();
                 renderMisCitas();
@@ -695,20 +727,6 @@
         async function initApp() {
             try {
                 await loadData();
-                // Datos iniciales si está vacío
-                if (allAsesores.length === 0 && allExpedientes.length === 0) {
-                    const id1 = generateId();
-                    const id2 = generateId();
-                    allAsesores.push({ id: id1, nombre: "Carlos Slim" }, { id: id2, nombre: "María Antonieta" });
-                    allExpedientes.push(
-                        { id: generateId(), asesorId: id1, nombreCliente: "Empresa Automotriz Alfa", inventario: "VIN123", numeroCliente: "CTE-001", origen: "planta", completado: false },
-                        { id: generateId(), asesorId: id1, nombreCliente: "Grupo Textil Omega", inventario: "LOTE45", numeroCliente: "CTE-002", origen: "intercambio", precioTraslado: "1500", completado: true },
-                        { id: generateId(), asesorId: id2, nombreCliente: "Constructora Beta", inventario: "VIN889", numeroCliente: "CTE-003", origen: "planta", completado: false }
-                    );
-                    saveData();
-                }
-            } catch (error) {
-                console.error("Init Error:", error);
             } finally {
                 document.getElementById('loading-state').classList.add('hidden');
                 document.getElementById('auth-state').classList.remove('hidden');
@@ -717,7 +735,7 @@
         }
 
         // ==========================================
-        // Views & Rendering
+        // Auth / Navigation
         // ==========================================
 
         function renderLoginList() {
@@ -740,6 +758,9 @@
             if (role === 'admin') {
                 document.getElementById('admin-dashboard').classList.remove('hidden');
                 renderAdminDashboard();
+            } else if (role === 'previa') {
+                document.getElementById('previa-dashboard').classList.remove('hidden');
+                renderPreviaDashboard();
             } else {
                 currentAsesor = allAsesores.find(a => a.id === asesorId);
                 document.getElementById('current-asesor-name').textContent = currentAsesor.nombre;
@@ -748,7 +769,6 @@
                 renderMisCitas();
                 cancelarSeleccionCliente(); 
             }
-            showToast(`Sesión iniciada como ${role === 'admin' ? 'Administrador' : currentAsesor.nombre}`, "success");
         };
 
         window.logout = () => {
@@ -757,62 +777,68 @@
             cancelarSeleccionCliente();
             renderLoginList();
             document.getElementById('admin-dashboard').classList.add('hidden');
+            document.getElementById('previa-dashboard').classList.add('hidden');
             document.getElementById('asesor-dashboard').classList.add('hidden');
             document.getElementById('auth-state').classList.remove('hidden');
         };
 
-        // ==========================================
-        // Admin Auth Logic
-        // ==========================================
-        
-        window.openAdminLoginModal = () => {
-            const modal = document.getElementById('admin-login-modal');
-            const modalContent = document.getElementById('admin-login-modal-content');
-            document.getElementById('admin-user').value = '';
-            document.getElementById('admin-pass').value = '';
-            
-            modal.classList.remove('hidden');
-            requestAnimationFrame(() => {
-                modalContent.classList.remove('scale-95', 'opacity-0');
-                modalContent.classList.add('scale-100', 'opacity-100');
-            });
-        };
-
-        window.closeAdminLoginModal = () => {
-            const modal = document.getElementById('admin-login-modal');
-            const modalContent = document.getElementById('admin-login-modal-content');
-            
-            modalContent.classList.remove('scale-100', 'opacity-100');
-            modalContent.classList.add('scale-95', 'opacity-0');
-            
-            setTimeout(() => modal.classList.add('hidden'), 200); 
-        };
-
+        // Modals Admin Login
+        window.openAdminLoginModal = () => openGenericModal('admin-login-modal');
+        window.closeAdminLoginModal = () => closeGenericModal('admin-login-modal');
         window.verifyAdminCredentials = () => {
-            const user = document.getElementById('admin-user').value.trim();
-            const pass = document.getElementById('admin-pass').value.trim();
-            
-            if (user === 'entregas832' && pass === 'dacsa832mzt1') {
+            if (document.getElementById('admin-user').value === 'entregas832' && 
+                document.getElementById('admin-pass').value === 'dacsa832mzt1') {
                 closeAdminLoginModal();
                 loginAs('admin');
             } else {
-                showToast('Usuario o contraseña incorrectos', 'error');
+                showToast('Credenciales incorrectas', 'error');
             }
         };
 
-        // ADMIN VIEWS
+        function openGenericModal(id) {
+            const m = document.getElementById(id);
+            const c = document.getElementById(id + '-content');
+            m.classList.remove('hidden');
+            requestAnimationFrame(() => {
+                c.classList.remove('scale-95', 'opacity-0');
+                c.classList.add('scale-100', 'opacity-100');
+            });
+        }
+
+        function closeGenericModal(id) {
+            const m = document.getElementById(id);
+            const c = document.getElementById(id + '-content');
+            c.classList.remove('scale-100', 'opacity-100');
+            c.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => m.classList.add('hidden'), 200);
+        }
+
+        // ==========================================
+        // Admin Logic
+        // ==========================================
+        
+        function getWeekMonthLabel(viewDateObj) {
+            const endOfWeek = new Date(viewDateObj.getFullYear(), viewDateObj.getMonth(), viewDateObj.getDate() + 6);
+            if (viewDateObj.getMonth() === endOfWeek.getMonth()) {
+                return `${monthNames[viewDateObj.getMonth()]} ${viewDateObj.getFullYear()}`;
+            } else {
+                return `${monthNames[viewDateObj.getMonth()]} - ${monthNames[endOfWeek.getMonth()]} ${endOfWeek.getFullYear()}`;
+            }
+        }
+
         function renderAdminDashboard() {
             if (currentUserRole !== 'admin') return;
 
-            const asesorSelect = document.getElementById('new-exp-asesor');
-            if (asesorSelect) {
-                const currentValue = asesorSelect.value;
-                asesorSelect.innerHTML = '<option value="">Selecciona un Asesor...</option>';
-                allAsesores.forEach(a => {
-                    asesorSelect.innerHTML += `<option value="${a.id}">${a.nombre}</option>`;
-                });
-                asesorSelect.value = currentValue;
-            }
+            const popSelects = (id) => {
+                const sel = document.getElementById(id);
+                if (!sel) return;
+                const curr = sel.value;
+                sel.innerHTML = '<option value="">Selecciona un Asesor...</option>';
+                allAsesores.forEach(a => { sel.innerHTML += `<option value="${a.id}">${a.nombre}</option>`; });
+                sel.value = curr;
+            };
+            popSelects('new-exp-asesor');
+            popSelects('edit-exp-asesor');
 
             const asesoresListContainer = document.getElementById('admin-lista-asesores');
             if (asesoresListContainer) {
@@ -821,7 +847,7 @@
                     asesoresListContainer.innerHTML += `
                         <li class="flex justify-between items-center p-3 hover:bg-white transition-colors">
                             <span class="font-medium text-slate-700">${a.nombre}</span>
-                            <button onclick="promptDeleteAsesor('${a.id}')" class="text-slate-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-md transition-all" title="Eliminar Asesor">
+                            <button onclick="promptDeleteAsesor('${a.id}')" class="text-slate-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-md transition-all">
                                 <i class="ph ph-trash text-lg"></i>
                             </button>
                         </li>
@@ -831,37 +857,38 @@
 
             const asesoresList = document.getElementById('admin-asesores-list');
             asesoresList.innerHTML = '';
-            
             allExpedientes.forEach(expediente => {
                 const asesorAsignado = allAsesores.find(a => a.id === expediente.asesorId);
                 const asesorNombre = asesorAsignado ? asesorAsignado.nombre : 'Desconocido';
-                
-                const tr = document.createElement('tr');
-                tr.className = "border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors";
-                
                 const isChecked = expediente.completado ? 'checked' : '';
                 const extraInfo = expediente.origen === 'intercambio' 
                     ? `<span class="text-amber-600 font-semibold ml-1 text-xs">[Intercambio: $${expediente.precioTraslado || 0}]</span>` 
                     : `<span class="text-emerald-600 font-semibold ml-1 text-xs">[Planta]</span>`;
+                const accesoriosText = expediente.accesorios ? `<div class="text-xs text-teal-600 mt-0.5 font-medium"><i class="ph ph-wrench"></i> ${expediente.accesorios}</div>` : '';
 
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors";
                 tr.innerHTML = `
-                    <td class="py-3 font-medium text-slate-600 text-sm">${asesorNombre}</td>
-                    <td class="py-3">
+                    <td class="py-3 font-medium text-slate-600 text-sm align-top pt-4">${asesorNombre}</td>
+                    <td class="py-3 pr-2 align-top pt-4">
                         <div class="font-bold text-slate-800 flex flex-wrap items-center gap-1">${expediente.nombreCliente} ${extraInfo}</div>
                         <div class="text-xs text-slate-500 mt-0.5">Inv: <span class="font-medium text-slate-700">${expediente.inventario || 'N/A'}</span> | Cte: <span class="font-medium text-slate-700">${expediente.numeroCliente || 'N/A'}</span></div>
+                        ${accesoriosText}
                     </td>
-                    <td class="py-3">
-                        <button onclick="openComentariosModal('${expediente.id}')" class="text-xs px-2 py-1 rounded border ${expediente.comentarios ? 'border-amber-300 bg-amber-50 text-amber-700' : 'border-slate-200 bg-slate-50 text-slate-500'} hover:bg-slate-100 transition-colors flex items-center gap-1 w-max">
-                            <i class="ph ph-chat-text text-sm"></i> ${expediente.comentarios ? 'Ver / Editar' : 'Agregar nota'}
-                        </button>
-                    </td>
-                    <td class="py-3 text-center">
-                        <div class="flex items-center justify-center gap-2">
-                            <button onclick="openEditExpedienteModal('${expediente.id}')" class="text-slate-400 hover:text-blue-600 bg-slate-50 hover:bg-blue-50 p-1.5 rounded-md transition-colors" title="Editar Expediente"><i class="ph ph-pencil-simple text-lg"></i></button>
-                            <button onclick="promptDeleteExpediente('${expediente.id}')" class="text-slate-400 hover:text-red-600 bg-slate-50 hover:bg-red-50 p-1.5 rounded-md transition-colors" title="Eliminar Expediente"><i class="ph ph-trash text-lg"></i></button>
+                    <td class="py-3 text-center align-top pt-4">
+                        <div class="flex flex-col items-center gap-2">
+                            <button onclick="promptEditExpediente('${expediente.id}')" class="text-xs px-2 py-1 rounded border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors flex items-center justify-center w-full gap-1">
+                                <i class="ph ph-pencil-simple text-sm"></i> Editar
+                            </button>
+                            <button onclick="promptDeleteExpediente('${expediente.id}')" class="text-xs px-2 py-1 rounded border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-colors flex items-center justify-center w-full gap-1">
+                                <i class="ph ph-trash text-sm"></i> Borrar
+                            </button>
+                            <button onclick="openComentariosModal('${expediente.id}')" class="text-xs px-2 py-1 rounded border ${expediente.comentarios ? 'border-amber-300 bg-amber-50 text-amber-700' : 'border-slate-200 bg-slate-50 text-slate-500'} hover:bg-slate-100 transition-colors flex items-center justify-center w-full gap-1">
+                                <i class="ph ph-chat-text text-sm"></i> ${expediente.comentarios ? 'Ver Notas' : '+ Notas'}
+                            </button>
                         </div>
                     </td>
-                    <td class="py-3 text-center">
+                    <td class="py-3 text-center align-top pt-4">
                         <label class="relative inline-flex items-center cursor-pointer">
                             <input type="checkbox" ${isChecked} onchange="toggleExpediente('${expediente.id}', this.checked)" class="sr-only peer">
                             <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
@@ -873,26 +900,18 @@
 
             const citasList = document.getElementById('admin-citas-list');
             citasList.innerHTML = '';
-            
             if (allCitas.length === 0) {
                 citasList.innerHTML = `<tr><td colspan="3" class="py-6 text-center text-slate-400">No hay entregas programadas</td></tr>`;
             } else {
-                const sortedCitas = [...allCitas].sort((a, b) => new Date(`${a.fecha}T${a.hora}`) - new Date(`${b.fecha}T${b.hora}`));
-
-                sortedCitas.forEach(cita => {
+                const sorted = [...allCitas].sort((a, b) => new Date(`${a.fecha}T${a.hora}`) - new Date(`${b.fecha}T${b.hora}`));
+                sorted.forEach(cita => {
                     const tr = document.createElement('tr');
                     tr.className = "border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors";
                     tr.innerHTML = `
-                        <td class="py-3">
-                            <div class="text-xs text-slate-500 font-medium">${cita.asesorNombre}</div>
-                            <div class="font-bold text-slate-800">${cita.nombreCliente}</div>
-                        </td>
-                        <td class="py-3">
-                            <div class="text-slate-800">${formatDate(cita.fecha)}</div>
-                            <div class="text-xs text-blue-600 font-bold">${cita.hora}</div>
-                        </td>
+                        <td class="py-3"><div class="text-xs text-slate-500 font-medium">${cita.asesorNombre}</div><div class="font-bold text-slate-800">${cita.nombreCliente}</div></td>
+                        <td class="py-3"><div class="text-slate-800">${formatDate(cita.fecha)}</div><div class="text-xs text-blue-600 font-bold">${cita.hora}</div></td>
                         <td class="py-3 text-right">
-                            <button onclick="liberarCita('${cita.id}')" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition-colors" title="Liberar/Cancelar Cita">
+                            <button onclick="promptCancelCita('${cita.id}')" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition-colors">
                                 <i class="ph ph-trash text-lg"></i>
                             </button>
                         </td>
@@ -900,17 +919,162 @@
                     citasList.appendChild(tr);
                 });
             }
-
             renderAdminCalendarView();
         }
 
-        // ASESOR VIEWS
+        // Admin Actions
+        window.createNewAsesor = () => {
+            const nameInput = document.getElementById('new-asesor-name');
+            const nombre = nameInput.value.trim();
+            if(!nombre) return showToast('Ingresa un nombre', 'error');
+            allAsesores.push({ id: generateId(), nombre: nombre });
+            saveData();
+            nameInput.value = '';
+            showToast('Asesor agregado', 'success');
+        };
+
+        window.promptDeleteAsesor = (id) => { pendingDeleteAsesorId = id; openGenericModal('delete-modal'); };
+        window.closeDeleteModal = () => { pendingDeleteAsesorId = null; closeGenericModal('delete-modal'); };
+        window.executeDeleteAsesor = () => {
+            if(!pendingDeleteAsesorId) return;
+            allAsesores = allAsesores.filter(a => a.id !== pendingDeleteAsesorId);
+            saveData();
+            showToast('Asesor eliminado', 'success');
+            closeDeleteModal();
+        };
+
+        window.togglePrecioTraslado = () => {
+            const origen = document.getElementById('new-exp-origen').value;
+            const containerPrecio = document.getElementById('container-precio-traslado');
+            if (origen === 'intercambio') containerPrecio.classList.remove('hidden');
+            else { containerPrecio.classList.add('hidden'); document.getElementById('new-exp-precio').value = ''; }
+        };
+
+        window.createNewExpediente = () => {
+            const clienteInput = document.getElementById('new-exp-cliente');
+            const inventarioInput = document.getElementById('new-exp-inventario');
+            const numClienteInput = document.getElementById('new-exp-num-cliente');
+            const accesoriosInput = document.getElementById('new-exp-accesorios');
+            const asesorSelect = document.getElementById('new-exp-asesor');
+            const origenSelect = document.getElementById('new-exp-origen');
+            const precioInput = document.getElementById('new-exp-precio');
+            
+            const nombreCliente = clienteInput.value.trim();
+            const asesorId = asesorSelect.value;
+            const origen = origenSelect.value;
+
+            if(!nombreCliente || !asesorId) return showToast('Ingresa el nombre y asesor', 'error');
+
+            allExpedientes.push({
+                id: generateId(),
+                nombreCliente: nombreCliente,
+                inventario: inventarioInput.value.trim(),
+                numeroCliente: numClienteInput.value.trim(),
+                accesorios: accesoriosInput.value.trim(),
+                origen: origen,
+                precioTraslado: origen === 'intercambio' ? precioInput.value.trim() : '',
+                comentarios: '',
+                asesorId: asesorId,
+                completado: false 
+            });
+            saveData();
+
+            clienteInput.value = ''; inventarioInput.value = ''; numClienteInput.value = '';
+            accesoriosInput.value = ''; asesorSelect.value = ''; precioInput.value = '';
+            origenSelect.value = 'planta'; togglePrecioTraslado();
+            showToast('Expediente creado', 'success');
+        };
+
+        window.toggleExpediente = (id, status) => {
+            const exp = allExpedientes.find(e => e.id === id);
+            if (exp) { exp.completado = status; saveData(); showToast("Estado actualizado", "success"); }
+        };
+
+        window.promptDeleteExpediente = (id) => { pendingDeleteExpId = id; openGenericModal('delete-exp-modal'); };
+        window.closeDeleteExpModal = () => { pendingDeleteExpId = null; closeGenericModal('delete-exp-modal'); };
+        window.executeDeleteExpediente = () => {
+            if(!pendingDeleteExpId) return;
+            allExpedientes = allExpedientes.filter(e => e.id !== pendingDeleteExpId);
+            allCitas = allCitas.filter(c => c.expedienteId !== pendingDeleteExpId);
+            saveData();
+            showToast('Expediente eliminado', 'success');
+            closeDeleteExpModal();
+        };
+
+        window.promptEditExpediente = (id) => {
+            const exp = allExpedientes.find(e => e.id === id);
+            if(!exp) return;
+            pendingEditExpId = id;
+            document.getElementById('edit-exp-cliente').value = exp.nombreCliente;
+            document.getElementById('edit-exp-inventario').value = exp.inventario || '';
+            document.getElementById('edit-exp-num-cliente').value = exp.numeroCliente || '';
+            document.getElementById('edit-exp-accesorios').value = exp.accesorios || '';
+            document.getElementById('edit-exp-asesor').value = exp.asesorId;
+            document.getElementById('edit-exp-origen').value = exp.origen;
+            document.getElementById('edit-exp-precio').value = exp.precioTraslado || '';
+            toggleEditPrecioTraslado();
+            openGenericModal('edit-exp-modal');
+        };
+        window.closeEditExpModal = () => { pendingEditExpId = null; closeGenericModal('edit-exp-modal'); };
+        window.toggleEditPrecioTraslado = () => {
+            const origen = document.getElementById('edit-exp-origen').value;
+            const containerPrecio = document.getElementById('edit-container-precio');
+            if (origen === 'intercambio') containerPrecio.classList.remove('hidden');
+            else { containerPrecio.classList.add('hidden'); document.getElementById('edit-exp-precio').value = ''; }
+        };
+        window.executeEditExpediente = () => {
+            if(!pendingEditExpId) return;
+            const exp = allExpedientes.find(e => e.id === pendingEditExpId);
+            const cliente = document.getElementById('edit-exp-cliente').value.trim();
+            const asesorId = document.getElementById('edit-exp-asesor').value;
+            if(!cliente || !asesorId) return showToast('El cliente y asesor son requeridos', 'error');
+
+            exp.nombreCliente = cliente;
+            exp.inventario = document.getElementById('edit-exp-inventario').value.trim();
+            exp.numeroCliente = document.getElementById('edit-exp-num-cliente').value.trim();
+            exp.accesorios = document.getElementById('edit-exp-accesorios').value.trim();
+            exp.asesorId = asesorId;
+            exp.origen = document.getElementById('edit-exp-origen').value;
+            exp.precioTraslado = exp.origen === 'intercambio' ? document.getElementById('edit-exp-precio').value.trim() : '';
+
+            saveData();
+            showToast('Expediente editado', 'success');
+            closeEditExpModal();
+        };
+
+        window.openComentariosModal = (id) => {
+            const exp = allExpedientes.find(e => e.id === id);
+            if(!exp) return;
+            document.getElementById('comentarios-exp-id').value = id;
+            document.getElementById('comentarios-texto').value = exp.comentarios || '';
+            openGenericModal('comentarios-modal');
+        };
+        window.closeComentariosModal = () => closeGenericModal('comentarios-modal');
+        window.saveComentarios = () => {
+            const id = document.getElementById('comentarios-exp-id').value;
+            const exp = allExpedientes.find(e => e.id === id);
+            if(exp) {
+                exp.comentarios = document.getElementById('comentarios-texto').value.trim();
+                saveData(); showToast('Notas guardadas', 'success'); closeComentariosModal();
+            }
+        };
+
+        window.promptCancelCita = (id) => { pendingCancelCitaId = id; openGenericModal('cancel-cita-modal'); };
+        window.closeCancelCitaModal = () => { pendingCancelCitaId = null; closeGenericModal('cancel-cita-modal'); };
+        window.executeCancelCita = () => {
+            if(!pendingCancelCitaId) return;
+            allCitas = allCitas.filter(c => c.id !== pendingCancelCitaId);
+            saveData(); showToast("Entrega cancelada exitosamente", "success"); closeCancelCitaModal();
+        };
+
+        // ==========================================
+        // Asesor Logic
+        // ==========================================
+
         function updateAsesorState() {
             if (currentUserRole !== 'asesor' || !currentAsesor) return;
-            
             const expedientesList = document.getElementById('asesor-expedientes-list');
             expedientesList.innerHTML = '';
-
             const misExpedientes = allExpedientes.filter(e => e.asesorId === currentAsesor.id);
 
             if (misExpedientes.length === 0) {
@@ -921,7 +1085,6 @@
             misExpedientes.forEach(exp => {
                 const citaExistente = allCitas.find(c => c.expedienteId === exp.id);
                 const card = document.createElement('div');
-                
                 const origenBadge = exp.origen === 'intercambio' 
                     ? `<span class="bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded border border-amber-200">Intercambio ($${exp.precioTraslado || 0})</span>` 
                     : `<span class="bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded border border-emerald-200">Planta</span>`;
@@ -933,6 +1096,9 @@
                         ${origenBadge}
                     </div>
                 `;
+                if (exp.accesorios) {
+                    metadataHtml += `<div class="text-xs text-teal-700 font-medium mb-2 bg-teal-50 px-2 py-1 rounded border border-teal-100 flex items-center gap-1 w-max"><i class="ph ph-wrench"></i> ${exp.accesorios}</div>`;
+                }
 
                 let comentariosHtml = exp.comentarios ? `
                     <div class="mt-3 bg-amber-50 border border-amber-200 rounded-lg p-2 text-xs text-amber-800 flex items-start gap-2 shadow-sm">
@@ -943,107 +1109,63 @@
 
                 if (!exp.completado) {
                     card.className = "border border-slate-200 bg-slate-50 p-4 rounded-xl opacity-80 relative";
-                    card.innerHTML = `
-                        <div class="flex items-center gap-2 mb-1 text-slate-500">
-                            <i class="ph ph-lock-key text-xl"></i> <span class="text-xs font-bold uppercase tracking-wider">En revisión</span>
-                        </div>
-                        <h4 class="font-bold text-slate-700 text-lg line-clamp-1" title="${exp.nombreCliente}">${exp.nombreCliente}</h4>
-                        ${metadataHtml}
-                        <p class="text-xs text-slate-500 mt-2">Espera a que el admin habilite el expediente.</p>
-                        ${comentariosHtml}
-                    `;
+                    card.innerHTML = `<div class="flex items-center gap-2 mb-1 text-slate-500"><i class="ph ph-lock-key text-xl"></i> <span class="text-xs font-bold uppercase tracking-wider">En revisión</span></div><h4 class="font-bold text-slate-700 text-lg line-clamp-1" title="${exp.nombreCliente}">${exp.nombreCliente}</h4>${metadataHtml}<p class="text-xs text-slate-500 mt-2">Espera a que el admin habilite el expediente.</p>${comentariosHtml}`;
                 } else if (citaExistente) {
                     card.className = "border border-green-200 bg-green-50 p-4 rounded-xl relative overflow-hidden";
-                    card.innerHTML = `
-                        <div class="absolute top-0 left-0 w-1 h-full bg-green-500"></div>
-                        <div class="flex items-center gap-2 mb-1 text-green-600">
-                            <i class="ph ph-check-circle text-xl"></i> <span class="text-xs font-bold uppercase tracking-wider">Agendado</span>
-                        </div>
-                        <h4 class="font-bold text-slate-800 text-lg line-clamp-1" title="${exp.nombreCliente}">${exp.nombreCliente}</h4>
-                        ${metadataHtml}
-                        <div class="mt-2 bg-white rounded p-2 text-xs font-medium text-slate-700 shadow-sm border border-green-100 flex items-center gap-2">
-                            <i class="ph ph-calendar-blank text-green-500"></i> ${formatDate(citaExistente.fecha)} - ${citaExistente.hora}
-                        </div>
-                        ${comentariosHtml}
-                    `;
+                    card.innerHTML = `<div class="absolute top-0 left-0 w-1 h-full bg-green-500"></div><div class="flex items-center gap-2 mb-1 text-green-600"><i class="ph ph-check-circle text-xl"></i> <span class="text-xs font-bold uppercase tracking-wider">Agendado</span></div><h4 class="font-bold text-slate-800 text-lg line-clamp-1" title="${exp.nombreCliente}">${exp.nombreCliente}</h4>${metadataHtml}<div class="mt-2 bg-white rounded p-2 text-xs font-medium text-slate-700 shadow-sm border border-green-100 flex items-center gap-2"><i class="ph ph-calendar-blank text-green-500"></i> ${formatDate(citaExistente.fecha)} - ${citaExistente.hora}</div>${comentariosHtml}`;
                 } else {
                     const isSelected = activeExpedienteId === exp.id;
                     card.className = `border p-4 rounded-xl cursor-pointer transition-all ${isSelected ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200 shadow-md' : 'border-blue-200 bg-white hover:border-blue-400 hover:shadow-md'}`;
                     card.onclick = () => seleccionarParaAgendar(exp.id, exp.nombreCliente);
-                    card.innerHTML = `
-                        <div class="flex items-center gap-2 mb-1 ${isSelected ? 'text-blue-600' : 'text-blue-500'}">
-                            <i class="ph ph-calendar-plus text-xl"></i> <span class="text-xs font-bold uppercase tracking-wider">Listo para agendar</span>
-                        </div>
-                        <h4 class="font-bold text-slate-800 text-lg line-clamp-1" title="${exp.nombreCliente}">${exp.nombreCliente}</h4>
-                        ${metadataHtml}
-                        ${comentariosHtml}
-                        <button class="mt-3 w-full py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm ${isSelected ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'}">
-                            ${isSelected ? 'Seleccionado para agendar' : 'Elegir horario de cita'}
-                        </button>
-                    `;
+                    card.innerHTML = `<div class="flex items-center gap-2 mb-1 ${isSelected ? 'text-blue-600' : 'text-blue-500'}"><i class="ph ph-calendar-plus text-xl"></i> <span class="text-xs font-bold uppercase tracking-wider">Listo para agendar</span></div><h4 class="font-bold text-slate-800 text-lg line-clamp-1" title="${exp.nombreCliente}">${exp.nombreCliente}</h4>${metadataHtml}${comentariosHtml}<button class="mt-3 w-full py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm ${isSelected ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'}">${isSelected ? 'Seleccionado para agendar' : 'Elegir horario de cita'}</button>`;
                 }
                 expedientesList.appendChild(card);
             });
         }
 
         window.seleccionarParaAgendar = (expId, clienteNombre) => {
-            activeExpedienteId = expId;
-            activeExpedienteNombre = clienteNombre;
+            activeExpedienteId = expId; activeExpedienteNombre = clienteNombre;
             updateAsesorState();
-            
             document.getElementById('active-client-label').textContent = clienteNombre;
             document.getElementById('btn-cancel-client').classList.remove('hidden');
-            
             const overlay = document.getElementById('agendar-overlay');
             overlay.classList.add('opacity-0');
             setTimeout(() => overlay.classList.add('hidden'), 300);
-            
             renderGoogleCalendar();
             document.getElementById('active-client-label').scrollIntoView({ behavior: 'smooth', block: 'center' });
         };
 
         window.cancelarSeleccionCliente = () => {
-            activeExpedienteId = null;
-            activeExpedienteNombre = null;
+            activeExpedienteId = null; activeExpedienteNombre = null;
             if(currentUserRole === 'asesor') updateAsesorState();
-            
             document.getElementById('active-client-label').textContent = 'Ninguno';
             document.getElementById('btn-cancel-client').classList.add('hidden');
-            
             const overlay = document.getElementById('agendar-overlay');
             overlay.classList.remove('hidden');
             setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+            if(currentUserRole === 'asesor') renderWeekView(); 
         };
 
         function renderMisCitas() {
             if (currentUserRole !== 'asesor' || !currentAsesor) return;
-
             const listContainer = document.getElementById('mis-citas-list');
             const emptyState = document.getElementById('mis-citas-empty');
             listContainer.innerHTML = '';
-
             const misCitas = allCitas.filter(c => c.asesorId === currentAsesor.id);
             misCitas.sort((a, b) => new Date(`${a.fecha}T${a.hora}`) - new Date(`${b.fecha}T${b.hora}`));
 
-            if (misCitas.length === 0) {
-                emptyState.classList.remove('hidden');
-            } else {
+            if (misCitas.length === 0) emptyState.classList.remove('hidden');
+            else {
                 emptyState.classList.add('hidden');
                 misCitas.forEach(cita => {
                     const card = document.createElement('div');
-                    card.className = "bg-white border border-slate-200 p-4 rounded-xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden";
+                    card.className = "bg-white border border-slate-200 p-4 rounded-xl shadow-sm relative overflow-hidden group";
                     card.innerHTML = `
                         <div class="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
-                        <div class="flex justify-between items-start mb-2">
-                            <span class="text-xs font-bold px-2 py-1 bg-slate-100 text-slate-600 rounded">Cliente</span>
-                        </div>
-                        <h4 class="font-bold text-slate-800 text-lg line-clamp-1 mb-2" title="${cita.nombreCliente}">${cita.nombreCliente}</h4>
-                        <div class="flex items-center gap-2 text-slate-700 font-bold text-sm">
-                            <i class="ph ph-calendar-blank text-blue-500"></i> ${formatDate(cita.fecha)}
-                        </div>
-                        <div class="flex items-center gap-2 text-slate-600 font-medium text-sm mt-1">
-                            <i class="ph ph-clock"></i> ${cita.hora}
-                        </div>
+                        <h4 class="font-bold text-slate-800 text-lg line-clamp-1 mb-2 mt-1" title="${cita.nombreCliente}">${cita.nombreCliente}</h4>
+                        <div class="flex items-center gap-2 text-slate-700 font-bold text-sm"><i class="ph ph-calendar-blank text-blue-500"></i> ${formatDate(cita.fecha)}</div>
+                        <div class="flex items-center gap-2 text-slate-600 font-medium text-sm mt-1"><i class="ph ph-clock"></i> ${cita.hora}</div>
+                        <button onclick="promptCancelCita('${cita.id}')" class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 bg-red-100 text-red-600 hover:bg-red-500 hover:text-white p-1.5 rounded-md transition-all"><i class="ph ph-trash"></i></button>
                     `;
                     listContainer.appendChild(card);
                 });
@@ -1051,425 +1173,46 @@
         }
 
         // ==========================================
-        // Business Logic & Actions
+        // Google Calendars Logic
         // ==========================================
-
-        window.toggleExpediente = (expedienteId, status) => {
-            const exp = allExpedientes.find(e => e.id === expedienteId);
-            if (exp) {
-                exp.completado = status;
-                saveData();
-                showToast("Estado de expediente actualizado.", "success");
-            }
-        };
-
-        // --- Modals para Cancelar Cita, Editar/Borrar Expediente ---
-
-        window.liberarCita = (citaId) => {
-            pendingDeleteCitaId = citaId;
-            const modal = document.getElementById('delete-cita-modal');
-            const modalContent = document.getElementById('delete-cita-modal-content');
-            
-            modal.classList.remove('hidden');
-            requestAnimationFrame(() => {
-                modalContent.classList.remove('scale-95', 'opacity-0');
-                modalContent.classList.add('scale-100', 'opacity-100');
-            });
-        };
-
-        window.closeDeleteCitaModal = () => {
-            const modal = document.getElementById('delete-cita-modal');
-            const modalContent = document.getElementById('delete-cita-modal-content');
-            
-            modalContent.classList.remove('scale-100', 'opacity-100');
-            modalContent.classList.add('scale-95', 'opacity-0');
-            
-            setTimeout(() => {
-                modal.classList.add('hidden');
-                pendingDeleteCitaId = null;
-            }, 200); 
-        };
-
-        window.executeDeleteCita = () => {
-            if (!pendingDeleteCitaId) return;
-            allCitas = allCitas.filter(c => c.id !== pendingDeleteCitaId);
-            saveData();
-            showToast("Cita cancelada exitosamente.", "success");
-            closeDeleteCitaModal();
-        };
-
-        window.promptDeleteExpediente = (id) => {
-            pendingDeleteExpedienteId = id;
-            const modal = document.getElementById('delete-exp-modal');
-            const modalContent = document.getElementById('delete-exp-modal-content');
-            
-            modal.classList.remove('hidden');
-            requestAnimationFrame(() => {
-                modalContent.classList.remove('scale-95', 'opacity-0');
-                modalContent.classList.add('scale-100', 'opacity-100');
-            });
-        };
-
-        window.closeDeleteExpedienteModal = () => {
-            const modal = document.getElementById('delete-exp-modal');
-            const modalContent = document.getElementById('delete-exp-modal-content');
-            
-            modalContent.classList.remove('scale-100', 'opacity-100');
-            modalContent.classList.add('scale-95', 'opacity-0');
-            
-            setTimeout(() => {
-                modal.classList.add('hidden');
-                pendingDeleteExpedienteId = null;
-            }, 200); 
-        };
-
-        window.executeDeleteExpediente = () => {
-            if (!pendingDeleteExpedienteId) return;
-            // Eliminar expediente
-            allExpedientes = allExpedientes.filter(e => e.id !== pendingDeleteExpedienteId);
-            // Liberar las citas que pertenecian a ese expediente
-            allCitas = allCitas.filter(c => c.expedienteId !== pendingDeleteExpedienteId);
-            
-            saveData();
-            showToast("Expediente eliminado exitosamente.", "success");
-            closeDeleteExpedienteModal();
-        };
-
-        window.openEditExpedienteModal = (id) => {
-            const exp = allExpedientes.find(e => e.id === id);
-            if (!exp) return;
-            editingExpedienteId = id;
-
-            const asesorSelect = document.getElementById('edit-exp-asesor');
-            asesorSelect.innerHTML = '<option value="">Selecciona un Asesor...</option>';
-            allAsesores.forEach(a => {
-                asesorSelect.innerHTML += `<option value="${a.id}">${a.nombre}</option>`;
-            });
-
-            document.getElementById('edit-exp-cliente').value = exp.nombreCliente;
-            document.getElementById('edit-exp-inventario').value = exp.inventario || '';
-            document.getElementById('edit-exp-num-cliente').value = exp.numeroCliente || '';
-            document.getElementById('edit-exp-asesor').value = exp.asesorId;
-            document.getElementById('edit-exp-origen').value = exp.origen || 'planta';
-            document.getElementById('edit-exp-precio').value = exp.precioTraslado || '';
-            
-            toggleEditPrecioTraslado();
-
-            const modal = document.getElementById('edit-exp-modal');
-            const modalContent = document.getElementById('edit-exp-modal-content');
-            
-            modal.classList.remove('hidden');
-            requestAnimationFrame(() => {
-                modalContent.classList.remove('scale-95', 'opacity-0');
-                modalContent.classList.add('scale-100', 'opacity-100');
-            });
-        };
-
-        window.closeEditExpedienteModal = () => {
-            const modal = document.getElementById('edit-exp-modal');
-            const modalContent = document.getElementById('edit-exp-modal-content');
-            
-            modalContent.classList.remove('scale-100', 'opacity-100');
-            modalContent.classList.add('scale-95', 'opacity-0');
-            
-            setTimeout(() => {
-                modal.classList.add('hidden');
-                editingExpedienteId = null;
-            }, 200); 
-        };
-
-        window.toggleEditPrecioTraslado = () => {
-            const origen = document.getElementById('edit-exp-origen').value;
-            const containerPrecio = document.getElementById('edit-container-precio-traslado');
-            if (origen === 'intercambio') {
-                containerPrecio.classList.remove('hidden');
-            } else {
-                containerPrecio.classList.add('hidden');
-                document.getElementById('edit-exp-precio').value = ''; 
-            }
-        };
-
-        window.saveEditExpediente = () => {
-            const exp = allExpedientes.find(e => e.id === editingExpedienteId);
-            if(!exp) return;
-
-            const clienteInput = document.getElementById('edit-exp-cliente').value.trim();
-            const asesorId = document.getElementById('edit-exp-asesor').value;
-            
-            if(!clienteInput || !asesorId) {
-                showToast('Ingresa el nombre del cliente y selecciona un asesor', 'error');
-                return;
-            }
-
-            exp.nombreCliente = clienteInput;
-            exp.inventario = document.getElementById('edit-exp-inventario').value.trim();
-            exp.numeroCliente = document.getElementById('edit-exp-num-cliente').value.trim();
-            exp.asesorId = asesorId;
-            exp.origen = document.getElementById('edit-exp-origen').value;
-            exp.precioTraslado = exp.origen === 'intercambio' ? document.getElementById('edit-exp-precio').value.trim() : '';
-
-            // Update Cita if it exists
-            const asesorObj = allAsesores.find(a => a.id === asesorId);
-            allCitas.forEach(cita => {
-                if (cita.expedienteId === exp.id) {
-                    cita.asesorId = asesorId;
-                    cita.asesorNombre = asesorObj ? asesorObj.nombre : 'Desconocido';
-                    cita.nombreCliente = clienteInput;
-                }
-            });
-
-            saveData();
-            showToast('Expediente actualizado exitosamente', 'success');
-            closeEditExpedienteModal();
-        };
-
-        // --- Fin Modals Editar/Borrar Expediente ---
-
-        window.createNewAsesor = () => {
-            const nameInput = document.getElementById('new-asesor-name');
-            const nombre = nameInput.value.trim();
-            if(!nombre) {
-                showToast('Ingresa un nombre para el asesor', 'error');
-                return;
-            }
-            
-            allAsesores.push({ id: generateId(), nombre: nombre });
-            saveData();
-            
-            nameInput.value = '';
-            showToast('Asesor agregado correctamente', 'success');
-        };
-
-        window.promptDeleteAsesor = (id) => {
-            pendingDeleteAsesorId = id;
-            const modal = document.getElementById('delete-modal');
-            const modalContent = document.getElementById('delete-modal-content');
-            
-            modal.classList.remove('hidden');
-            requestAnimationFrame(() => {
-                modalContent.classList.remove('scale-95', 'opacity-0');
-                modalContent.classList.add('scale-100', 'opacity-100');
-            });
-        };
-
-        window.closeDeleteModal = () => {
-            const modal = document.getElementById('delete-modal');
-            const modalContent = document.getElementById('delete-modal-content');
-            
-            modalContent.classList.remove('scale-100', 'opacity-100');
-            modalContent.classList.add('scale-95', 'opacity-0');
-            
-            setTimeout(() => {
-                modal.classList.add('hidden');
-                pendingDeleteAsesorId = null;
-            }, 200); 
-        };
-
-        window.executeDeleteAsesor = () => {
-            if(!pendingDeleteAsesorId) return;
-            allAsesores = allAsesores.filter(a => a.id !== pendingDeleteAsesorId);
-            saveData();
-            showToast('Asesor eliminado exitosamente', 'success');
-            closeDeleteModal();
-        };
-
-        window.togglePrecioTraslado = () => {
-            const origen = document.getElementById('new-exp-origen').value;
-            const containerPrecio = document.getElementById('container-precio-traslado');
-            if (origen === 'intercambio') {
-                containerPrecio.classList.remove('hidden');
-            } else {
-                containerPrecio.classList.add('hidden');
-                document.getElementById('new-exp-precio').value = ''; 
-            }
-        };
-
-        window.createNewExpediente = () => {
-            const clienteInput = document.getElementById('new-exp-cliente');
-            const inventarioInput = document.getElementById('new-exp-inventario');
-            const numClienteInput = document.getElementById('new-exp-num-cliente');
-            const asesorSelect = document.getElementById('new-exp-asesor');
-            const origenSelect = document.getElementById('new-exp-origen');
-            const precioInput = document.getElementById('new-exp-precio');
-            
-            const nombreCliente = clienteInput.value.trim();
-            const inventario = inventarioInput.value.trim();
-            const numeroCliente = numClienteInput.value.trim();
-            const asesorId = asesorSelect.value;
-            const origen = origenSelect.value;
-            const precioTraslado = origen === 'intercambio' ? precioInput.value.trim() : '';
-
-            if(!nombreCliente || !asesorId) {
-                showToast('Ingresa el nombre del cliente y selecciona un asesor', 'error');
-                return;
-            }
-
-            allExpedientes.push({
-                id: generateId(),
-                nombreCliente: nombreCliente,
-                inventario: inventario,
-                numeroCliente: numeroCliente,
-                origen: origen,
-                precioTraslado: precioTraslado,
-                comentarios: '',
-                asesorId: asesorId,
-                completado: false 
-            });
-            saveData();
-
-            clienteInput.value = '';
-            inventarioInput.value = '';
-            numClienteInput.value = '';
-            asesorSelect.value = '';
-            precioInput.value = '';
-            origenSelect.value = 'planta';
-            togglePrecioTraslado();
-            showToast('Expediente creado y asignado', 'success');
-        };
-
-        window.openComentariosModal = (expId) => {
-            const exp = allExpedientes.find(e => e.id === expId);
-            if(!exp) return;
-            
-            document.getElementById('comentarios-exp-id').value = exp.id;
-            document.getElementById('comentarios-texto').value = exp.comentarios || '';
-            
-            const modal = document.getElementById('comentarios-modal');
-            const modalContent = document.getElementById('comentarios-modal-content');
-            
-            modal.classList.remove('hidden');
-            requestAnimationFrame(() => {
-                modalContent.classList.remove('scale-95', 'opacity-0');
-                modalContent.classList.add('scale-100', 'opacity-100');
-            });
-        };
-
-        window.closeComentariosModal = () => {
-            const modal = document.getElementById('comentarios-modal');
-            const modalContent = document.getElementById('comentarios-modal-content');
-            
-            modalContent.classList.remove('scale-100', 'opacity-100');
-            modalContent.classList.add('scale-95', 'opacity-0');
-            
-            setTimeout(() => modal.classList.add('hidden'), 200); 
-        };
-
-        window.saveComentarios = () => {
-            const expId = document.getElementById('comentarios-exp-id').value;
-            const comentarios = document.getElementById('comentarios-texto').value.trim();
-            
-            if(!expId) return;
-
-            const exp = allExpedientes.find(e => e.id === expId);
-            if(exp) {
-                exp.comentarios = comentarios;
-                saveData();
-                showToast('Comentarios guardados', 'success');
-                closeComentariosModal();
-            }
-        };
-
-        // Lógica del Google Calendar Clone
-        // ==========================================
-
-        window.renderGoogleCalendar = () => {
-            if (currentUserRole !== 'asesor') return;
-            renderMiniCalendar();
-            renderWeekView();
-        };
 
         const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-        const dayNamesMini = ["D", "L", "M", "M", "J", "V", "S"];
         const dayNamesWeek = ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"];
+        const TIME_SLOTS = ["10:00", "12:00", "14:00", "16:00", "18:00"];
 
-        function formatDate(dateStr) {
-            const [y, m, d] = dateStr.split('-');
-            return `${d}/${m}/${y}`;
-        }
+        function formatDate(dateStr) { const [y, m, d] = dateStr.split('-'); return `${d}/${m}/${y}`; }
+        function formatTime12h(time24) { const [h, m] = time24.split(':'); let hrs = parseInt(h); const ampm = hrs >= 12 ? 'pm' : 'am'; hrs = hrs%12 || 12; return `${hrs}:${m}${ampm}`; }
+        function getReadableDate(dateStr) { const [y, m, d] = dateStr.split('-'); const dt = new Date(y, parseInt(m)-1, d); return `${dt.getDate()} de ${monthNames[dt.getMonth()]} de ${dt.getFullYear()}`; }
 
-        window.changeMiniCalMonth = (dir) => {
-            miniCalDate.setMonth(miniCalDate.getMonth() + dir);
-            renderMiniCalendar();
-        };
-
-        window.changeWeekView = (days) => {
-            viewDate.setDate(viewDate.getDate() + days);
-            miniCalDate = new Date(viewDate);
-            renderGoogleCalendar();
-        };
-
-        window.resetToToday = () => {
-            viewDate = new Date();
-            miniCalDate = new Date();
-            renderGoogleCalendar();
-        };
-
-        window.changeAdminWeekView = (days) => {
-            adminViewDate.setDate(adminViewDate.getDate() + days);
-            renderAdminDashboard();
-        };
-
-        window.resetAdminToToday = () => {
-            adminViewDate = new Date();
-            renderAdminDashboard();
-        };
-
-        window.jumpToDate = (year, month, day) => {
-            viewDate = new Date(year, month, day);
-            renderGoogleCalendar();
-        };
+        window.renderGoogleCalendar = () => { if (currentUserRole !== 'asesor') return; renderMiniCalendar(); renderWeekView(); };
+        window.changeMiniCalMonth = (dir) => { miniCalDate.setMonth(miniCalDate.getMonth() + dir); renderMiniCalendar(); };
+        window.changeWeekView = (days) => { viewDate.setDate(viewDate.getDate() + days); miniCalDate = new Date(viewDate); renderGoogleCalendar(); };
+        window.resetToToday = () => { viewDate = new Date(); miniCalDate = new Date(); renderGoogleCalendar(); };
+        window.changeAdminWeekView = (days) => { adminViewDate.setDate(adminViewDate.getDate() + days); renderAdminDashboard(); };
+        window.resetAdminToToday = () => { adminViewDate = new Date(); renderAdminDashboard(); };
+        window.changePreviaWeekView = (days) => { previaViewDate.setDate(previaViewDate.getDate() + days); renderPreviaDashboard(); };
+        window.resetPreviaToToday = () => { previaViewDate = new Date(); renderPreviaDashboard(); };
+        window.jumpToDate = (y, m, d) => { viewDate = new Date(y, m, d); renderGoogleCalendar(); };
 
         function renderMiniCalendar() {
-            const year = miniCalDate.getFullYear();
-            const month = miniCalDate.getMonth();
-            
+            const year = miniCalDate.getFullYear(), month = miniCalDate.getMonth();
             document.getElementById('mini-cal-month-year').textContent = `${monthNames[month]} ${year}`;
-            
             const grid = document.getElementById('mini-cal-grid');
             grid.innerHTML = '';
-
-            const firstDayOfMonth = new Date(year, month, 1).getDay();
+            const firstDay = new Date(year, month, 1).getDay();
             const daysInMonth = new Date(year, month + 1, 0).getDate();
-            const daysInPrevMonth = new Date(year, month, 0).getDate();
+            const daysInPrev = new Date(year, month, 0).getDate();
 
-            for (let i = 0; i < firstDayOfMonth; i++) {
-                const dayNum = daysInPrevMonth - firstDayOfMonth + i + 1;
-                grid.innerHTML += `<div class="p-1 text-slate-300">${dayNum}</div>`;
-            }
-
-            const viewDateStr = getLocalISODate(viewDate);
-            
+            for (let i = 0; i < firstDay; i++) grid.innerHTML += `<div class="p-1 text-slate-300">${daysInPrev - firstDay + i + 1}</div>`;
+            const vdStr = getLocalISODate(viewDate);
             for (let i = 1; i <= daysInMonth; i++) {
-                const iterDate = new Date(year, month, i);
-                const iterDateStr = getLocalISODate(iterDate);
-                
-                let classes = "p-1 rounded-full cursor-pointer hover:bg-slate-100 transition-colors w-7 h-7 mx-auto flex items-center justify-center ";
-                
-                if (iterDateStr === todayStr) {
-                    classes += "text-blue-600 font-bold bg-blue-50";
-                } else if (iterDateStr === viewDateStr) {
-                    classes += "bg-blue-600 text-white font-bold hover:bg-blue-700";
-                } else {
-                    classes += "text-slate-700";
-                }
-
-                grid.innerHTML += `<div class="${classes}" onclick="jumpToDate(${year}, ${month}, ${i})">${i}</div>`;
+                const iterStr = getLocalISODate(new Date(year, month, i));
+                let cls = "p-1 rounded-full cursor-pointer hover:bg-slate-100 transition-colors w-7 h-7 mx-auto flex items-center justify-center ";
+                if (iterStr === todayStr) cls += "text-blue-600 font-bold bg-blue-50";
+                else if (iterStr === vdStr) cls += "bg-blue-600 text-white font-bold hover:bg-blue-700";
+                else cls += "text-slate-700";
+                grid.innerHTML += `<div class="${cls}" onclick="jumpToDate(${year}, ${month}, ${i})">${i}</div>`;
             }
-        }
-
-        function formatTime12h(time24) {
-            const [h, m] = time24.split(':');
-            let hours = parseInt(h);
-            const ampm = hours >= 12 ? 'pm' : 'am';
-            hours = hours % 12;
-            hours = hours ? hours : 12;
-            return `${hours}:${m}${ampm}`;
-        }
-
-        function getReadableDate(dateStr) {
-            const [y, m, d] = dateStr.split('-');
-            const date = new Date(y, parseInt(m)-1, d);
-            return `${date.getDate()} de ${monthNames[date.getMonth()]} de ${date.getFullYear()}`;
         }
 
         function renderAdminCalendarView() {
@@ -1477,48 +1220,84 @@
             if(!container) return;
             container.innerHTML = '';
             
-            const availableHours = ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"];
+            const monthLabel = document.getElementById('admin-calendar-month-label');
+            if(monthLabel) monthLabel.textContent = getWeekMonthLabel(adminViewDate);
 
             for(let i = 0; i < 7; i++) {
                 let colDate = new Date(adminViewDate.getFullYear(), adminViewDate.getMonth(), adminViewDate.getDate() + i);
                 let colDateStr = getLocalISODate(colDate);
-                let isToday = colDateStr === todayStr;
-
+                
                 let col = document.createElement('div');
                 col.className = "flex-1 flex flex-col min-w-[120px]";
-
-                let header = `
+                col.innerHTML = `
                     <div class="flex flex-col items-center mb-4 pb-2 border-b border-slate-100">
                         <div class="text-xs text-slate-500 font-medium mb-1">${dayNamesWeek[colDate.getDay()]}</div>
-                        <div class="text-2xl w-10 h-10 flex items-center justify-center rounded-full ${isToday ? 'bg-purple-600 text-white font-semibold shadow-md' : 'text-slate-700'}">${colDate.getDate()}</div>
+                        <div class="text-2xl w-10 h-10 flex items-center justify-center rounded-full ${colDateStr === todayStr ? 'bg-purple-600 text-white font-semibold shadow-md' : 'text-slate-700'}">${colDate.getDate()}</div>
                     </div>
                 `;
-                col.innerHTML = header;
 
-                availableHours.forEach(hora => {
-                    const cita = allCitas.find(c => c.fecha === colDateStr && c.hora === hora);
-                    
-                    let slotHtml = '';
-                    if (cita) {
-                        slotHtml = `
-                            <div class="mb-2 p-3 rounded-xl bg-indigo-50 border border-indigo-200 text-xs shadow-sm relative group transition-all hover:shadow-md">
-                                <div class="font-bold text-indigo-800 mb-1 flex items-center gap-1"><i class="ph ph-clock text-sm"></i> ${formatTime12h(hora)}</div>
-                                <div class="text-slate-800 font-bold line-clamp-1 mb-1" title="${cita.nombreCliente}">${cita.nombreCliente}</div>
-                                <div class="text-slate-500 line-clamp-1 mt-0.5 flex items-center gap-1"><i class="ph ph-user-circle"></i> ${cita.asesorNombre}</div>
-                                
-                                <button onclick="liberarCita('${cita.id}')" class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 text-red-500 hover:text-white bg-white hover:bg-red-500 p-1.5 rounded-md shadow-sm transition-all" title="Cancelar Cita">
-                                    <i class="ph ph-trash"></i>
-                                </button>
-                            </div>
-                        `;
+                TIME_SLOTS.forEach(hora => {
+                    const citasEnHora = allCitas.filter(c => c.fecha === colDateStr && c.hora === hora);
+                    if (citasEnHora.length > 0) {
+                        citasEnHora.forEach(cita => {
+                            col.insertAdjacentHTML('beforeend', `
+                                <div class="mb-2 p-3 rounded-xl bg-indigo-50 border border-indigo-200 text-xs shadow-sm relative group transition-all">
+                                    <div class="font-bold text-indigo-800 mb-1 flex items-center gap-1"><i class="ph ph-clock text-sm"></i> ${formatTime12h(hora)}</div>
+                                    <div class="text-slate-800 font-bold line-clamp-1 mb-1" title="${cita.nombreCliente}">${cita.nombreCliente}</div>
+                                    <div class="text-slate-500 line-clamp-1 mt-0.5 flex items-center gap-1"><i class="ph ph-user-circle"></i> ${cita.asesorNombre}</div>
+                                    <button onclick="promptCancelCita('${cita.id}')" class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 text-red-500 hover:text-white bg-white hover:bg-red-500 p-1.5 rounded-md shadow-sm transition-all"><i class="ph ph-trash"></i></button>
+                                </div>
+                            `);
+                        });
                     } else {
-                        slotHtml = `
-                            <div class="mb-2 h-14 rounded-xl border border-dashed border-slate-200 flex items-center justify-center text-slate-300 text-xs font-medium bg-slate-50/50">
-                                ${formatTime12h(hora)}
-                            </div>
-                        `;
+                        col.insertAdjacentHTML('beforeend', `<div class="mb-2 h-14 rounded-xl border border-dashed border-slate-200 flex items-center justify-center text-slate-300 text-xs font-medium bg-slate-50/50">${formatTime12h(hora)}</div>`);
                     }
-                    col.insertAdjacentHTML('beforeend', slotHtml);
+                });
+                container.appendChild(col);
+            }
+        }
+
+        function renderPreviaDashboard() {
+            if (currentUserRole !== 'previa') return;
+            const container = document.getElementById('previa-calendar-grid');
+            if(!container) return;
+            container.innerHTML = '';
+            
+            const monthLabel = document.getElementById('previa-calendar-month-label');
+            if(monthLabel) monthLabel.textContent = getWeekMonthLabel(previaViewDate);
+
+            for(let i = 0; i < 7; i++) {
+                let colDate = new Date(previaViewDate.getFullYear(), previaViewDate.getMonth(), previaViewDate.getDate() + i);
+                let colDateStr = getLocalISODate(colDate);
+                let col = document.createElement('div');
+                col.className = "flex-1 flex flex-col min-w-[120px]";
+                col.innerHTML = `
+                    <div class="flex flex-col items-center mb-4 pb-2 border-b border-slate-100">
+                        <div class="text-xs text-slate-500 font-medium mb-1">${dayNamesWeek[colDate.getDay()]}</div>
+                        <div class="text-2xl w-10 h-10 flex items-center justify-center rounded-full ${colDateStr === todayStr ? 'bg-teal-600 text-white font-semibold shadow-md' : 'text-slate-700'}">${colDate.getDate()}</div>
+                    </div>
+                `;
+
+                TIME_SLOTS.forEach(hora => {
+                    const citas = allCitas.filter(c => c.fecha === colDateStr && c.hora === hora);
+                    if (citas.length > 0) {
+                        citas.forEach(cita => {
+                            const exp = allExpedientes.find(e => e.id === cita.expedienteId);
+                            const accesoriosHTML = (exp && exp.accesorios) 
+                                ? `<div class="mt-1 text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded text-[10px] leading-tight font-medium border border-teal-100"><i class="ph ph-wrench"></i> ${exp.accesorios}</div>` 
+                                : `<div class="mt-1 text-slate-400 text-[10px] leading-tight font-medium px-1.5 py-0.5">Sin accesorios</div>`;
+                            col.insertAdjacentHTML('beforeend', `
+                                <div class="mb-2 p-3 rounded-xl bg-white border border-slate-200 text-xs shadow-sm">
+                                    <div class="font-bold text-teal-700 mb-1 flex items-center gap-1"><i class="ph ph-clock text-sm"></i> ${formatTime12h(hora)}</div>
+                                    <div class="text-slate-800 font-bold line-clamp-1 mb-0.5" title="${cita.nombreCliente}">${cita.nombreCliente}</div>
+                                    <div class="text-slate-500 line-clamp-1 text-[10px] mb-1 flex items-center gap-1"><i class="ph ph-user-circle"></i> ${cita.asesorNombre}</div>
+                                    ${accesoriosHTML}
+                                </div>
+                            `);
+                        });
+                    } else {
+                        col.insertAdjacentHTML('beforeend', `<div class="mb-2 h-14 rounded-xl border border-dashed border-slate-200 flex items-center justify-center text-slate-300 text-xs font-medium bg-slate-50/50">${formatTime12h(hora)}</div>`);
+                    }
                 });
                 container.appendChild(col);
             }
@@ -1528,87 +1307,74 @@
             const container = document.getElementById('week-columns');
             container.innerHTML = '';
             
-            const availableHours = ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"];
-
+            let hasPolarizado = false;
+            if (activeExpedienteId) {
+                const actExp = allExpedientes.find(e => e.id === activeExpedienteId);
+                if (actExp && actExp.accesorios && actExp.accesorios.toLowerCase().includes('polarizado')) {
+                    hasPolarizado = true;
+                }
+            }
+            
             for(let i = 0; i < 7; i++) {
                 let colDate = new Date(viewDate.getFullYear(), viewDate.getMonth(), viewDate.getDate() + i);
                 let colDateStr = getLocalISODate(colDate);
-                let isToday = colDateStr === todayStr;
-
+                
                 let col = document.createElement('div');
                 col.className = "flex-1 flex flex-col items-center min-w-[120px]";
-
-                let header = `
+                col.innerHTML = `
                     <div class="text-xs text-slate-500 font-medium mb-1">${dayNamesWeek[colDate.getDay()]}</div>
-                    <div class="text-2xl mb-4 w-10 h-10 flex items-center justify-center rounded-full ${isToday ? 'bg-blue-600 text-white font-semibold' : 'text-slate-700'}">${colDate.getDate()}</div>
+                    <div class="text-2xl mb-4 w-10 h-10 flex items-center justify-center rounded-full ${colDateStr === todayStr ? 'bg-blue-600 text-white font-semibold' : 'text-slate-700'}">${colDate.getDate()}</div>
                 `;
-                col.innerHTML = header;
 
-                availableHours.forEach(hora => {
+                // Máximo 5 entregas al día en total
+                const diaLleno = allCitas.filter(c => c.fecha === colDateStr).length >= 5;
+                const bloqueadoPorPolarizado = (colDateStr === todayStr && hasPolarizado);
+
+                TIME_SLOTS.forEach(hora => {
                     const isPast = colDateStr < todayStr;
-                    const isTaken = allCitas.some(c => c.fecha === colDateStr && c.hora === hora);
+                    // Ya no bloqueamos la hora si alguien la tomó (varios asesores pueden a la vez) hasta que se llenen las 5 del día
                     
-                    let btnHtml = '';
-
-                    if (isPast || isTaken) {
-                        btnHtml = `<div class="h-10 w-full flex items-center justify-center text-slate-300 font-light mb-2">—</div>`;
+                    if (isPast) {
+                        col.insertAdjacentHTML('beforeend', `<div class="h-10 w-full flex items-center justify-center text-slate-300 font-light mb-2">—</div>`);
+                    } else if (bloqueadoPorPolarizado) {
+                        col.insertAdjacentHTML('beforeend', `<div class="h-9 w-[90%] flex items-center justify-center text-amber-600 bg-amber-50 border border-amber-200 rounded-full font-medium text-[10px] mb-3 cursor-not-allowed leading-tight px-1 text-center" title="Polarizado requiere agendar con 24h de anticipación">Bloqueado (Polarizado)</div>`);
+                    } else if (diaLleno) {
+                        col.insertAdjacentHTML('beforeend', `<div class="h-9 w-[90%] flex items-center justify-center text-red-400 bg-red-50 border border-red-100 rounded-full font-medium text-xs mb-3 cursor-not-allowed" title="Máximo de 5 entregas en total alcanzado en este día">Día Lleno</div>`);
                     } else {
-                        btnHtml = `
+                        col.insertAdjacentHTML('beforeend', `
                             <button onclick="iniciarAgendado('${colDateStr}', '${hora}')" 
                                 class="h-9 w-[90%] flex items-center justify-center rounded-full bg-white text-blue-600 border border-slate-300 hover:border-blue-600 hover:bg-slate-50 mb-3 text-sm font-medium transition-all">
                                 ${formatTime12h(hora)}
                             </button>
-                        `;
+                        `);
                     }
-                    col.insertAdjacentHTML('beforeend', btnHtml);
                 });
                 container.appendChild(col);
             }
         }
 
         window.iniciarAgendado = (fecha, hora) => {
-            if (!activeExpedienteId) {
-                showToast("Por favor, selecciona un cliente de la lista primero.", "error");
-                return;
-            }
-
-            const isTaken = allCitas.some(c => c.fecha === fecha && c.hora === hora);
-            if (isTaken) {
-                showToast("Esa hora acaba de ser reservada por alguien más.", "error");
-                return;
-            }
+            if (!activeExpedienteId) return showToast("Por favor, selecciona un cliente primero.", "error");
 
             pendingCita = { expedienteId: activeExpedienteId, clienteNombre: activeExpedienteNombre, fecha, hora };
-            
             document.getElementById('modal-cliente-txt').textContent = activeExpedienteNombre;
             document.getElementById('modal-fecha-txt').textContent = getReadableDate(fecha);
             document.getElementById('modal-hora-txt').textContent = formatTime12h(hora);
-
-            const modal = document.getElementById('confirm-modal');
-            const modalContent = document.getElementById('confirm-modal-content');
-            
-            modal.classList.remove('hidden');
-            requestAnimationFrame(() => {
-                modalContent.classList.remove('scale-95', 'opacity-0');
-                modalContent.classList.add('scale-100', 'opacity-100');
-            });
+            openGenericModal('confirm-modal');
         };
 
-        window.closeConfirmModal = () => {
-            const modal = document.getElementById('confirm-modal');
-            const modalContent = document.getElementById('confirm-modal-content');
-            
-            modalContent.classList.remove('scale-100', 'opacity-100');
-            modalContent.classList.add('scale-95', 'opacity-0');
-            
-            setTimeout(() => {
-                modal.classList.add('hidden');
-                pendingCita = null;
-            }, 200); 
-        };
-
+        window.closeConfirmModal = () => { pendingCita = null; closeGenericModal('confirm-modal'); };
+        
         window.executeAgendar = () => {
             if (!pendingCita || !currentAsesor) return;
+
+            // Doble check por si alguien agendó mientras el modal estaba abierto
+            if (allCitas.filter(c => c.fecha === pendingCita.fecha).length >= 5) {
+                closeConfirmModal();
+                showToast("Lo sentimos, este día acaba de llenarse con 5 entregas.", "error");
+                renderWeekView();
+                return;
+            }
 
             allCitas.push({
                 id: generateId(),
@@ -1621,16 +1387,13 @@
                 createdAt: new Date().toISOString()
             });
             saveData();
-
-            showToast("¡Cita agendada exitosamente!", "success");
+            showToast("¡Entrega agendada exitosamente!", "success");
             closeConfirmModal();
             cancelarSeleccionCliente(); 
         };
 
-        // Iniciar
-        window.addEventListener('DOMContentLoaded', () => {
-            initApp();
-        });
+        // Inicio
+        window.addEventListener('DOMContentLoaded', () => initApp());
 
     </script>
 </body>
