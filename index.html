@@ -1,0 +1,1438 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM Asesores - Seguimiento</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <!-- GSAP & ScrollTrigger -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        /* Parallax Styles */
+        .hero-container {
+            height: 100vh;
+            width: 100%;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background-color: #0f172a;
+        }
+
+        .hero-image-wrapper {
+            width: 40vw;
+            height: 50vh;
+            border-radius: 20px;
+            overflow: hidden;
+            position: absolute;
+            z-index: 1;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .hero-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scale(1.1); /* Slight overscale to prevent edges during expansion */
+        }
+
+        .hero-text {
+            z-index: 10;
+            text-align: center;
+            color: white;
+            pointer-events: none;
+        }
+
+        .scroll-indicator {
+            position: absolute;
+            bottom: 2rem;
+            z-index: 10;
+            color: white;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-20px); }
+            60% { transform: translateY(-10px); }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Modals and Toasts */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- GSAP Parallax Hero Section -->
+    <section class="hero-container" id="hero-section">
+        <div class="hero-image-wrapper" id="hero-image-wrapper">
+            <!-- Using a high quality placeholder for the expanding effect -->
+            <img src="https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=2000&auto=format&fit=crop" class="hero-image" alt="Office CRM">
+        </div>
+        <div class="hero-text" id="hero-text">
+            <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight mb-4 drop-shadow-lg">CRM Portal</h1>
+            <p class="text-xl md:text-2xl font-light opacity-90 drop-shadow-md">Gestión de Expedientes y Citas</p>
+        </div>
+        <div class="scroll-indicator">
+            <i class="ph ph-caret-double-down text-3xl opacity-70"></i>
+        </div>
+    </section>
+
+    <!-- Main App Section (Appears after scroll) -->
+    <section class="min-h-screen relative z-20 bg-slate-50 rounded-t-[40px] -mt-10 p-6 md:p-12 shadow-[0_-10px_40px_rgba(0,0,0,0.1)]" id="main-app">
+        
+        <!-- Loading State -->
+        <div id="loading-state" class="flex flex-col items-center justify-center py-20">
+            <i class="ph ph-spinner-gap animate-spin text-5xl text-blue-600 mb-4"></i>
+            <p class="text-slate-500 font-medium">Conectando al sistema...</p>
+        </div>
+
+        <!-- Authentication / Role Selection -->
+        <div id="auth-state" class="hidden max-w-md mx-auto py-10">
+            <div class="glass-panel p-8 rounded-2xl shadow-xl">
+                <div class="text-center mb-8">
+                    <i class="ph ph-users-three text-5xl text-blue-600 mb-2"></i>
+                    <h2 class="text-2xl font-bold text-slate-800">Iniciar Sesión</h2>
+                    <p class="text-slate-500 text-sm mt-1">Selecciona tu rol para continuar</p>
+                </div>
+
+                <div class="space-y-4">
+                    <button onclick="openAdminLoginModal()" class="w-full flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-white py-3 px-4 rounded-xl transition-all font-semibold shadow-lg hover:shadow-xl hover:-translate-y-0.5">
+                        <i class="ph ph-shield-check text-xl"></i> Entrar como Administrador
+                    </button>
+                    
+                    <div class="relative py-3">
+                        <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-200"></div></div>
+                        <div class="relative flex justify-center"><span class="bg-white px-4 text-sm text-slate-400">O entrar como Asesor</span></div>
+                    </div>
+
+                    <div class="space-y-2" id="asesores-login-list">
+                        <!-- Populated dynamically via JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Administrador -->
+        <div id="admin-dashboard" class="hidden max-w-6xl mx-auto space-y-8">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2"><i class="ph ph-shield-star text-indigo-600"></i> Panel de Administración</h2>
+                    <p class="text-slate-500 text-sm">Gestiona expedientes y libera horarios de citas.</p>
+                </div>
+                <button onclick="logout()" class="mt-4 md:mt-0 text-slate-500 hover:text-slate-800 flex items-center gap-1 transition-colors px-4 py-2 bg-slate-100 rounded-lg hover:bg-slate-200">
+                    <i class="ph ph-sign-out"></i> Salir
+                </button>
+            </div>
+
+            <!-- NUEVO: Sección de Creación de Datos (Reemplaza el Excel/Sheets) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Gestión de Asesores -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col">
+                    <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><i class="ph ph-users-three text-blue-500"></i> Gestión de Asesores</h3>
+                    <div class="flex gap-2 mb-4">
+                        <input type="text" id="new-asesor-name" placeholder="Nombre del asesor" class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                        <button onclick="createNewAsesor()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm">Agregar</button>
+                    </div>
+                    <div class="flex-1 border border-slate-100 rounded-xl overflow-hidden bg-slate-50/50 flex flex-col">
+                        <ul id="admin-lista-asesores" class="divide-y divide-slate-100 max-h-[150px] overflow-y-auto w-full text-sm">
+                            <!-- Populated by JS -->
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Agregar Expediente (Fila del Sheet) -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                    <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><i class="ph ph-folder-plus text-purple-500"></i> Nuevo Expediente (Cliente)</h3>
+                    <div class="flex flex-col gap-3">
+                        <input type="text" id="new-exp-cliente" placeholder="Nombre del Cliente / Folio" class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                        <div class="flex gap-2 w-full">
+                            <input type="text" id="new-exp-inventario" placeholder="Inventario (Ej. VIN/Lote)" class="flex-1 min-w-0 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                            <input type="text" id="new-exp-num-cliente" placeholder="No. Cliente" class="flex-1 min-w-0 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                        </div>
+                        <div class="flex gap-2 w-full">
+                            <select id="new-exp-origen" onchange="togglePrecioTraslado()" class="flex-1 min-w-0 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white">
+                                <option value="planta">De Planta</option>
+                                <option value="intercambio">De Intercambio</option>
+                            </select>
+                            <div id="container-precio-traslado" class="hidden flex-1 min-w-0">
+                                <input type="number" id="new-exp-precio" placeholder="Precio Traslado ($)" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                            </div>
+                        </div>
+                        <div class="flex gap-2 w-full">
+                            <select id="new-exp-asesor" class="flex-1 min-w-0 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white">
+                                <option value="">Selecciona un Asesor...</option>
+                                <!-- Populated by JS -->
+                            </select>
+                            <button onclick="createNewExpediente()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-md flex-shrink-0">Crear Expediente</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Gestión de Expedientes (Simula el Sheet) -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                    <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><i class="ph ph-folder-open text-blue-500"></i> Estado de Expedientes</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-slate-200 text-slate-500 text-sm">
+                                    <th class="pb-3 font-semibold">Asesor</th>
+                                    <th class="pb-3 font-semibold">Cliente (Detalles)</th>
+                                    <th class="pb-3 font-semibold">Comentarios</th>
+                                    <th class="pb-3 font-semibold text-center">Listo para agendar</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-asesores-list">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Gestión de Citas -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                    <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><i class="ph ph-calendar-check text-green-500"></i> Entregas Programadas</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-slate-200 text-slate-500 text-sm">
+                                    <th class="pb-3 font-semibold">Asesor / Cliente</th>
+                                    <th class="pb-3 font-semibold">Fecha / Hora</th>
+                                    <th class="pb-3 font-semibold text-right">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-citas-list">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Calendario General de Entregas (Admin) -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
+                    <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <i class="ph ph-calendar-grid text-purple-500 text-xl"></i> Calendario General de Entregas
+                    </h3>
+                    <div class="flex items-center gap-2">
+                        <button onclick="changeAdminWeekView(-7)" class="text-slate-500 hover:bg-slate-100 p-2 rounded-full transition-colors"><i class="ph ph-caret-left text-lg"></i></button>
+                        <button onclick="resetAdminToToday()" class="text-sm font-medium text-slate-600 hover:bg-slate-100 px-3 py-1 rounded-md border border-slate-200 transition-colors shadow-sm">Hoy</button>
+                        <button onclick="changeAdminWeekView(7)" class="text-slate-500 hover:bg-slate-100 p-2 rounded-full transition-colors"><i class="ph ph-caret-right text-lg"></i></button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto pb-4">
+                    <div id="admin-calendar-grid" class="flex gap-2 min-w-[900px]">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Asesor -->
+        <div id="asesor-dashboard" class="hidden max-w-[1200px] mx-auto space-y-6">
+            
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                        <i class="ph ph-user-circle text-blue-600"></i> 
+                        Hola, <span id="current-asesor-name">Asesor</span>
+                    </h2>
+                    <p class="text-slate-500 text-sm">Selecciona un cliente con expediente completo para agendar su cita.</p>
+                </div>
+                <button onclick="logout()" class="mt-4 md:mt-0 text-slate-500 hover:text-slate-800 flex items-center gap-1 transition-colors px-4 py-2 bg-slate-100 rounded-lg hover:bg-slate-200">
+                    <i class="ph ph-sign-out"></i> Cambiar Usuario
+                </button>
+            </div>
+
+            <!-- Lista de Expedientes del Asesor -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><i class="ph ph-users text-blue-500"></i> Mis Clientes (Expedientes)</h3>
+                <div id="asesor-expedientes-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- Contenedor Principal Bloqueable (Calendario) -->
+            <div class="relative mt-8">
+                <!-- Overlay if blocked -->
+                <div id="agendar-overlay" class="absolute inset-0 bg-slate-50/80 backdrop-blur-[2px] z-20 flex flex-col items-center justify-center p-6 text-center rounded-2xl transition-all">
+                    <i class="ph ph-lock-key text-4xl text-slate-400 mb-2"></i>
+                    <p class="text-slate-600 font-medium text-sm">Selecciona un cliente de tu lista superior que esté "Listo para agendar".</p>
+                </div>
+
+                <!-- Cabecera de Selección -->
+                <div class="bg-blue-600 p-4 rounded-t-2xl border-b-0 flex flex-col md:flex-row items-center justify-between gap-4 text-white shadow-md">
+                    <div class="flex items-center gap-2 font-medium">
+                        <i class="ph ph-calendar-plus text-2xl"></i>
+                        <span>Agendando cita para: <strong id="active-client-label" class="text-lg ml-1 text-blue-100">Ninguno</strong></span>
+                    </div>
+                    <button onclick="cancelarSeleccionCliente()" class="text-sm bg-blue-700 hover:bg-blue-800 px-3 py-1.5 rounded-lg transition-colors border border-blue-500 hidden" id="btn-cancel-client">
+                        Cancelar selección
+                    </button>
+                </div>
+
+                <!-- Interfaz tipo Google Calendar -->
+                <div class="bg-white border border-slate-200 rounded-b-2xl p-6 shadow-sm overflow-hidden flex flex-col lg:flex-row gap-8">
+                    
+                    <!-- Columna Izquierda: Mini Calendario -->
+                    <div class="w-full lg:w-64 flex-shrink-0">
+                        <h3 class="text-lg font-medium text-slate-800 mb-6">Select an appointment time</h3>
+                        
+                        <!-- Mini Calendar Header -->
+                        <div class="flex items-center justify-between mb-4">
+                            <h4 id="mini-cal-month-year" class="text-sm font-medium text-slate-700">Noviembre 2026</h4>
+                            <div class="flex gap-2 text-slate-500">
+                                <button onclick="changeMiniCalMonth(-1)" class="hover:bg-slate-100 p-1 rounded-full transition-colors"><i class="ph ph-caret-left"></i></button>
+                                <button onclick="changeMiniCalMonth(1)" class="hover:bg-slate-100 p-1 rounded-full transition-colors"><i class="ph ph-caret-right"></i></button>
+                            </div>
+                        </div>
+
+                        <!-- Mini Calendar Grid -->
+                        <div class="grid grid-cols-7 gap-y-2 text-center text-xs">
+                            <!-- Days Header -->
+                            <div class="text-slate-400 mb-1">D</div><div class="text-slate-400 mb-1">L</div><div class="text-slate-400 mb-1">M</div>
+                            <div class="text-slate-400 mb-1">M</div><div class="text-slate-400 mb-1">J</div><div class="text-slate-400 mb-1">V</div><div class="text-slate-400 mb-1">S</div>
+                            
+                            <!-- Generado por JS -->
+                            <div id="mini-cal-grid" class="col-span-7 grid grid-cols-7 gap-y-1 gap-x-1"></div>
+                        </div>
+                    </div>
+
+                    <!-- Columna Derecha: Vista Semanal -->
+                    <div class="flex-1 overflow-x-auto min-h-[400px]">
+                        
+                        <!-- Week Navigation Header -->
+                        <div class="flex items-center justify-between min-w-[600px] mb-4 pl-4 pr-2">
+                            <div class="flex items-center gap-4">
+                                <button onclick="changeWeekView(-7)" class="text-slate-500 hover:bg-slate-100 p-2 rounded-full transition-colors"><i class="ph ph-caret-left text-lg"></i></button>
+                                <button onclick="resetToToday()" class="text-sm font-medium text-slate-600 hover:bg-slate-100 px-3 py-1 rounded-md border border-slate-200 transition-colors">Hoy</button>
+                            </div>
+                            <div class="text-xs text-slate-500">(GMT-07:00) Mexican Pacific Standard Time - Mazatlán</div>
+                            <div>
+                                <button onclick="changeWeekView(7)" class="text-slate-500 hover:bg-slate-100 p-2 rounded-full transition-colors"><i class="ph ph-caret-right text-lg"></i></button>
+                            </div>
+                        </div>
+
+                        <!-- Grid de Días (7 columnas) -->
+                        <div id="week-columns" class="flex gap-2 min-w-[600px]">
+                            <!-- Generado por JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lista Mis Citas -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mt-8">
+                <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><i class="ph ph-list-dashes text-blue-500"></i> Mis Entregas Programadas</h3>
+                
+                <div id="mis-citas-empty" class="hidden py-8 text-center text-slate-400">
+                    <i class="ph ph-calendar-blank text-4xl mb-2"></i>
+                    <p>No tienes entregas programadas aún.</p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4" id="mis-citas-list">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- Modal de Confirmación -->
+    <div id="confirm-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl transform transition-all scale-95 opacity-0" id="confirm-modal-content">
+            <h3 class="text-xl font-bold text-slate-800 mb-2">Confirmar Cita</h3>
+            <p class="text-slate-600 text-sm mb-4">Estás a punto de agendar una cita para el cliente <strong id="modal-cliente-txt" class="text-slate-800"></strong>.</p>
+            
+            <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 mb-6 flex flex-col gap-1">
+                <div class="flex items-center gap-2 text-slate-700">
+                    <i class="ph ph-calendar-blank text-blue-600"></i> <span id="modal-fecha-txt" class="font-medium"></span>
+                </div>
+                <div class="flex items-center gap-2 text-slate-700">
+                    <i class="ph ph-clock text-blue-600"></i> <span id="modal-hora-txt" class="font-medium"></span>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3">
+                <button onclick="closeConfirmModal()" class="px-4 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition-colors">Cancelar</button>
+                <button onclick="executeAgendar()" class="px-4 py-2 bg-blue-600 text-white font-medium hover:bg-blue-700 rounded-lg shadow-md transition-colors flex items-center gap-2">
+                    Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmación para Eliminar Asesor -->
+    <div id="delete-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl transform transition-all scale-95 opacity-0" id="delete-modal-content">
+            <h3 class="text-xl font-bold text-slate-800 mb-2">Eliminar Asesor</h3>
+            <p class="text-slate-600 text-sm mb-6">¿Estás seguro de que deseas eliminar este asesor de forma permanente?</p>
+            
+            <div class="flex justify-end gap-3">
+                <button onclick="closeDeleteModal()" class="px-4 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition-colors">Cancelar</button>
+                <button onclick="executeDeleteAsesor()" class="px-4 py-2 bg-red-600 text-white font-medium hover:bg-red-700 rounded-lg shadow-md transition-colors flex items-center gap-2">
+                    <i class="ph ph-trash"></i> Eliminar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Login Admin -->
+    <div id="admin-login-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl transform transition-all scale-95 opacity-0" id="admin-login-modal-content">
+            <h3 class="text-xl font-bold text-slate-800 mb-2">Acceso Administrativo</h3>
+            <p class="text-slate-600 text-sm mb-4">Ingresa tus credenciales para continuar.</p>
+            
+            <div class="space-y-4 mb-6">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Usuario</label>
+                    <input type="text" id="admin-user" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" placeholder="Ej. admin">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Contraseña</label>
+                    <input type="password" id="admin-pass" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" placeholder="••••••••">
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3">
+                <button onclick="closeAdminLoginModal()" class="px-4 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition-colors">Cancelar</button>
+                <button onclick="verifyAdminCredentials()" class="px-4 py-2 bg-slate-900 text-white font-medium hover:bg-slate-800 rounded-lg shadow-md transition-colors">
+                    Ingresar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Comentarios para Expediente -->
+    <div id="comentarios-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl transform transition-all scale-95 opacity-0" id="comentarios-modal-content">
+            <h3 class="text-xl font-bold text-slate-800 mb-2">Comentarios del Expediente</h3>
+            <p class="text-slate-600 text-sm mb-4">Añade notas para el asesor (ej. documentos faltantes, firmas requeridas).</p>
+            
+            <input type="hidden" id="comentarios-exp-id">
+            <div class="mb-6">
+                <textarea id="comentarios-texto" rows="4" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" placeholder="Escribe aquí los comentarios (ej. Falta firma de aval)..."></textarea>
+            </div>
+
+            <div class="flex justify-end gap-3">
+                <button onclick="closeComentariosModal()" class="px-4 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition-colors">Cancelar</button>
+                <button onclick="saveComentarios()" class="px-4 py-2 bg-blue-600 text-white font-medium hover:bg-blue-700 rounded-lg shadow-md transition-colors flex items-center gap-2">
+                    <i class="ph ph-floppy-disk"></i> Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Storage & Application Logic -->
+    <script>
+        // ==========================================
+        // UI & GSAP Initialization
+        // ==========================================
+        gsap.registerPlugin(ScrollTrigger);
+
+        // Parallax Effect for Hero
+        const tl = gsap.timeline({
+            scrollTrigger: {
+                trigger: "#hero-section",
+                start: "top top",
+                end: "bottom top",
+                scrub: true,
+                pin: true,
+                pinSpacing: false
+            }
+        });
+
+        // Expand image to cover screen and fade out text
+        tl.to("#hero-image-wrapper", { width: "100vw", height: "100vh", borderRadius: "0px", ease: "power1.inOut" }, 0)
+          .to("#hero-text", { opacity: 0, y: -50, ease: "power1.in" }, 0)
+          .to(".scroll-indicator", { opacity: 0 }, 0)
+          .to(".hero-image", { scale: 1 }, 0); 
+
+
+        // Utility: Toast Notifications (No alert() rule)
+        window.showToast = (msg, type = 'info') => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let bg = 'bg-slate-800';
+            let icon = 'ph-info';
+            if (type === 'error') { bg = 'bg-red-600'; icon = 'ph-warning-circle'; }
+            if (type === 'success') { bg = 'bg-green-600'; icon = 'ph-check-circle'; }
+
+            toast.className = `${bg} text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 transform transition-all duration-300 translate-x-full opacity-0 pointer-events-auto`;
+            toast.innerHTML = `<i class="ph ${icon} text-xl"></i><p class="text-sm font-medium">${msg}</p>`;
+            
+            container.appendChild(toast);
+            
+            // Animate in
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-x-full', 'opacity-0');
+            });
+
+            // Remove after 3s
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-x-full');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        };
+
+        // ==========================================
+        // LocalStorage Setup & State Management
+        // ==========================================
+        
+        // Generador de IDs únicos
+        const generateId = () => Math.random().toString(36).substring(2, 15);
+
+        // Claves de guardado
+        const LS_ASESORES = 'crm_asesores_v1';
+        const LS_EXPEDIENTES = 'crm_expedientes_v1';
+        const LS_CITAS = 'crm_citas_v1';
+
+        // URL de Google Apps Script (Base de datos en Drive)
+        // Pega aquí la URL que obtuviste de Google Apps Script (Ej. "https://script.google.com/macros/s/.../exec")
+        // Si la dejas vacía, el sistema seguirá usando la memoria local de tu navegador sin romperse.
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzb1dh4Xg2Xwd8OoMHjXGwp7z7rTcppz20UJ0PSqoFu9ijSD9U--Dp13jKAXRiWq_wohg/exec"; 
+
+        // Global State
+        let allAsesores = [];
+        let allExpedientes = [];
+        let allCitas = [];
+        
+        let currentUserRole = null; // 'admin' | 'asesor'
+        let currentAsesor = null; // Object if role is asesor
+        
+        // Estado del Calendario
+        const getLocalISODate = (date) => {
+            const offset = date.getTimezoneOffset();
+            const localDate = new Date(date.getTime() - (offset*60*1000));
+            return localDate.toISOString().split('T')[0];
+        };
+
+        const todayObj = new Date();
+        const todayStr = getLocalISODate(todayObj);
+        let viewDate = new Date();
+        let miniCalDate = new Date();
+        let adminViewDate = new Date(); 
+        
+        // Selección para agendar
+        let activeExpedienteId = null;
+        let activeExpedienteNombre = null;
+        let pendingCita = null; 
+        let pendingDeleteAsesorId = null;
+
+        // Cargar datos (De Drive o Local)
+        async function loadData() {
+            if (GOOGLE_SCRIPT_URL) {
+                try {
+                    // Agregar un límite de tiempo (8 segundos) por si Google Drive no responde
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 8000);
+                    
+                    const response = await fetch(GOOGLE_SCRIPT_URL, { signal: controller.signal });
+                    clearTimeout(timeoutId); // Limpiar el límite si respondió a tiempo
+                    
+                    if (!response.ok) throw new Error("Error HTTP " + response.status);
+                    
+                    const data = await response.json();
+                    
+                    allAsesores = data.asesores || [];
+                    allExpedientes = data.expedientes || [];
+                    allCitas = data.citas || [];
+                    
+                    // Crea un respaldo local por si se pierde el internet después
+                    localStorage.setItem(LS_ASESORES, JSON.stringify(allAsesores));
+                    localStorage.setItem(LS_EXPEDIENTES, JSON.stringify(allExpedientes));
+                    localStorage.setItem(LS_CITAS, JSON.stringify(allCitas));
+                    return;
+                } catch (error) {
+                    console.warn("Fallo al conectar con Google Drive, usando almacenamiento local:", error);
+                    // No mostramos alerta aquí para no asustar al usuario; el fallback se encargará.
+                }
+            }
+            
+            // Fallback si no hay URL, falla el internet, o da error de permisos (Modo Seguro)
+            try {
+                allAsesores = JSON.parse(localStorage.getItem(LS_ASESORES)) || [];
+                allExpedientes = JSON.parse(localStorage.getItem(LS_EXPEDIENTES)) || [];
+                allCitas = JSON.parse(localStorage.getItem(LS_CITAS)) || [];
+            } catch(e) {
+                console.error("Error leyendo LocalStorage:", e);
+                allAsesores = [];
+                allExpedientes = [];
+                allCitas = [];
+            }
+        }
+
+        // Guardar datos y actualizar vistas
+        function saveData() {
+            // 1. Guardado Inmediato Local y Actualización de UI (Para que sea súper rápido)
+            localStorage.setItem(LS_ASESORES, JSON.stringify(allAsesores));
+            localStorage.setItem(LS_EXPEDIENTES, JSON.stringify(allExpedientes));
+            localStorage.setItem(LS_CITAS, JSON.stringify(allCitas));
+            updateViews();
+
+            // 2. Sincronización en segundo plano con la carpeta de Google Drive
+            if (GOOGLE_SCRIPT_URL) {
+                const payload = {
+                    asesores: allAsesores,
+                    expedientes: allExpedientes,
+                    citas: allCitas
+                };
+                
+                // mode: 'no-cors' permite enviar datos a Google de forma silenciosa sin que el navegador bloquee la petición
+                fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify(payload)
+                }).catch(error => {
+                    console.error("Error sincronizando con Drive:", error);
+                });
+            }
+        }
+
+        function updateViews() {
+            if (!currentUserRole) renderLoginList();
+            if (currentUserRole === 'admin') renderAdminDashboard();
+            if (currentUserRole === 'asesor') {
+                updateAsesorState();
+                renderMisCitas();
+                renderGoogleCalendar();
+            }
+        }
+
+        async function initApp() {
+            try {
+                await loadData();
+                
+                // Sembrar datos de prueba si está vacío la primera vez
+                if (allAsesores.length === 0 && allExpedientes.length === 0) {
+                    const id1 = generateId();
+                    const id2 = generateId();
+                    
+                    allAsesores.push(
+                        { id: id1, nombre: "Carlos Slim" },
+                        { id: id2, nombre: "María Antonieta" }
+                    );
+                    
+                    allExpedientes.push(
+                        { id: generateId(), asesorId: id1, nombreCliente: "Empresa Automotriz Alfa", inventario: "VIN123", numeroCliente: "CTE-001", origen: "planta", completado: false },
+                        { id: generateId(), asesorId: id1, nombreCliente: "Grupo Textil Omega", inventario: "LOTE45", numeroCliente: "CTE-002", origen: "intercambio", precioTraslado: "1500", completado: true },
+                        { id: generateId(), asesorId: id2, nombreCliente: "Constructora Beta", inventario: "VIN889", numeroCliente: "CTE-003", origen: "planta", completado: false }
+                    );
+                    
+                    saveData();
+                }
+
+            } catch (error) {
+                console.error("Init Error:", error);
+                showToast("Hubo un detalle al cargar, pero estás en modo seguro.", "error");
+            } finally {
+                // CLAVE: Siempre ocultar la pantalla de carga, incluso si Google falló
+                document.getElementById('loading-state').classList.add('hidden');
+                document.getElementById('auth-state').classList.remove('hidden');
+                updateViews();
+            }
+        }
+
+        // ==========================================
+        // Views & Rendering
+        // ==========================================
+
+        function renderLoginList() {
+            const listContainer = document.getElementById('asesores-login-list');
+            listContainer.innerHTML = '';
+            
+            allAsesores.forEach(asesor => {
+                const btn = document.createElement('button');
+                btn.className = "w-full flex items-center justify-between bg-white hover:bg-blue-50 text-slate-700 py-3 px-4 rounded-xl border border-slate-200 transition-colors text-left";
+                btn.onclick = () => loginAs('asesor', asesor.id);
+                btn.innerHTML = `<span class="font-medium">${asesor.nombre}</span><i class="ph ph-arrow-right text-slate-400"></i>`;
+                listContainer.appendChild(btn);
+            });
+        }
+
+        window.loginAs = (role, asesorId = null) => {
+            currentUserRole = role;
+            document.getElementById('auth-state').classList.add('hidden');
+
+            if (role === 'admin') {
+                document.getElementById('admin-dashboard').classList.remove('hidden');
+                renderAdminDashboard();
+            } else {
+                currentAsesor = allAsesores.find(a => a.id === asesorId);
+                document.getElementById('current-asesor-name').textContent = currentAsesor.nombre;
+                document.getElementById('asesor-dashboard').classList.remove('hidden');
+                updateAsesorState();
+                renderMisCitas();
+                cancelarSeleccionCliente(); 
+            }
+            showToast(`Sesión iniciada como ${role === 'admin' ? 'Administrador' : currentAsesor.nombre}`, "success");
+        };
+
+        window.logout = () => {
+            currentUserRole = null;
+            currentAsesor = null;
+            cancelarSeleccionCliente();
+            renderLoginList();
+            document.getElementById('admin-dashboard').classList.add('hidden');
+            document.getElementById('asesor-dashboard').classList.add('hidden');
+            document.getElementById('auth-state').classList.remove('hidden');
+        };
+
+        // ==========================================
+        // Admin Auth Logic
+        // ==========================================
+        
+        window.openAdminLoginModal = () => {
+            const modal = document.getElementById('admin-login-modal');
+            const modalContent = document.getElementById('admin-login-modal-content');
+            document.getElementById('admin-user').value = '';
+            document.getElementById('admin-pass').value = '';
+            
+            modal.classList.remove('hidden');
+            requestAnimationFrame(() => {
+                modalContent.classList.remove('scale-95', 'opacity-0');
+                modalContent.classList.add('scale-100', 'opacity-100');
+            });
+        };
+
+        window.closeAdminLoginModal = () => {
+            const modal = document.getElementById('admin-login-modal');
+            const modalContent = document.getElementById('admin-login-modal-content');
+            
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            modalContent.classList.add('scale-95', 'opacity-0');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 200); 
+        };
+
+        window.verifyAdminCredentials = () => {
+            const user = document.getElementById('admin-user').value.trim();
+            const pass = document.getElementById('admin-pass').value.trim();
+            
+            if (user === 'entregas832' && pass === 'dacsa832mzt1') {
+                closeAdminLoginModal();
+                loginAs('admin');
+            } else {
+                showToast('Usuario o contraseña incorrectos', 'error');
+            }
+        };
+
+        // ADMIN VIEWS
+        function renderAdminDashboard() {
+            if (currentUserRole !== 'admin') return;
+
+            const asesorSelect = document.getElementById('new-exp-asesor');
+            if (asesorSelect) {
+                const currentValue = asesorSelect.value;
+                asesorSelect.innerHTML = '<option value="">Selecciona un Asesor...</option>';
+                allAsesores.forEach(a => {
+                    asesorSelect.innerHTML += `<option value="${a.id}">${a.nombre}</option>`;
+                });
+                asesorSelect.value = currentValue;
+            }
+
+            const asesoresListContainer = document.getElementById('admin-lista-asesores');
+            if (asesoresListContainer) {
+                asesoresListContainer.innerHTML = '';
+                allAsesores.forEach(a => {
+                    asesoresListContainer.innerHTML += `
+                        <li class="flex justify-between items-center p-3 hover:bg-white transition-colors">
+                            <span class="font-medium text-slate-700">${a.nombre}</span>
+                            <button onclick="promptDeleteAsesor('${a.id}')" class="text-slate-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-md transition-all" title="Eliminar Asesor">
+                                <i class="ph ph-trash text-lg"></i>
+                            </button>
+                        </li>
+                    `;
+                });
+            }
+
+            const asesoresList = document.getElementById('admin-asesores-list');
+            asesoresList.innerHTML = '';
+            
+            allExpedientes.forEach(expediente => {
+                const asesorAsignado = allAsesores.find(a => a.id === expediente.asesorId);
+                const asesorNombre = asesorAsignado ? asesorAsignado.nombre : 'Desconocido';
+                
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors";
+                
+                const isChecked = expediente.completado ? 'checked' : '';
+                const extraInfo = expediente.origen === 'intercambio' 
+                    ? `<span class="text-amber-600 font-semibold ml-1 text-xs">[Intercambio: $${expediente.precioTraslado || 0}]</span>` 
+                    : `<span class="text-emerald-600 font-semibold ml-1 text-xs">[Planta]</span>`;
+
+                tr.innerHTML = `
+                    <td class="py-3 font-medium text-slate-600 text-sm">${asesorNombre}</td>
+                    <td class="py-3">
+                        <div class="font-bold text-slate-800 flex flex-wrap items-center gap-1">${expediente.nombreCliente} ${extraInfo}</div>
+                        <div class="text-xs text-slate-500 mt-0.5">Inv: <span class="font-medium text-slate-700">${expediente.inventario || 'N/A'}</span> | Cte: <span class="font-medium text-slate-700">${expediente.numeroCliente || 'N/A'}</span></div>
+                    </td>
+                    <td class="py-3">
+                        <button onclick="openComentariosModal('${expediente.id}')" class="text-xs px-2 py-1 rounded border ${expediente.comentarios ? 'border-amber-300 bg-amber-50 text-amber-700' : 'border-slate-200 bg-slate-50 text-slate-500'} hover:bg-slate-100 transition-colors flex items-center gap-1 w-max">
+                            <i class="ph ph-chat-text text-sm"></i> ${expediente.comentarios ? 'Ver / Editar' : 'Agregar nota'}
+                        </button>
+                    </td>
+                    <td class="py-3 text-center">
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" ${isChecked} onchange="toggleExpediente('${expediente.id}', this.checked)" class="sr-only peer">
+                            <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                        </label>
+                    </td>
+                `;
+                asesoresList.appendChild(tr);
+            });
+
+            const citasList = document.getElementById('admin-citas-list');
+            citasList.innerHTML = '';
+            
+            if (allCitas.length === 0) {
+                citasList.innerHTML = `<tr><td colspan="3" class="py-6 text-center text-slate-400">No hay entregas programadas</td></tr>`;
+            } else {
+                const sortedCitas = [...allCitas].sort((a, b) => new Date(`${a.fecha}T${a.hora}`) - new Date(`${b.fecha}T${b.hora}`));
+
+                sortedCitas.forEach(cita => {
+                    const tr = document.createElement('tr');
+                    tr.className = "border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors";
+                    tr.innerHTML = `
+                        <td class="py-3">
+                            <div class="text-xs text-slate-500 font-medium">${cita.asesorNombre}</div>
+                            <div class="font-bold text-slate-800">${cita.nombreCliente}</div>
+                        </td>
+                        <td class="py-3">
+                            <div class="text-slate-800">${formatDate(cita.fecha)}</div>
+                            <div class="text-xs text-blue-600 font-bold">${cita.hora}</div>
+                        </td>
+                        <td class="py-3 text-right">
+                            <button onclick="liberarCita('${cita.id}')" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition-colors" title="Liberar/Cancelar Cita">
+                                <i class="ph ph-trash text-lg"></i>
+                            </button>
+                        </td>
+                    `;
+                    citasList.appendChild(tr);
+                });
+            }
+
+            renderAdminCalendarView();
+        }
+
+        // ASESOR VIEWS
+        function updateAsesorState() {
+            if (currentUserRole !== 'asesor' || !currentAsesor) return;
+            
+            const expedientesList = document.getElementById('asesor-expedientes-list');
+            expedientesList.innerHTML = '';
+
+            const misExpedientes = allExpedientes.filter(e => e.asesorId === currentAsesor.id);
+
+            if (misExpedientes.length === 0) {
+                expedientesList.innerHTML = `<div class="col-span-full py-8 text-center text-slate-400">No tienes clientes asignados.</div>`;
+                return;
+            }
+
+            misExpedientes.forEach(exp => {
+                const citaExistente = allCitas.find(c => c.expedienteId === exp.id);
+                const card = document.createElement('div');
+                
+                const origenBadge = exp.origen === 'intercambio' 
+                    ? `<span class="bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded border border-amber-200">Intercambio ($${exp.precioTraslado || 0})</span>` 
+                    : `<span class="bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded border border-emerald-200">Planta</span>`;
+
+                let metadataHtml = `
+                    <div class="flex flex-wrap gap-2 text-xs text-slate-500 mb-2 mt-1">
+                        <span class="bg-slate-100 px-1.5 py-0.5 rounded">Inv: <strong class="text-slate-700">${exp.inventario || 'N/A'}</strong></span>
+                        <span class="bg-slate-100 px-1.5 py-0.5 rounded">No: <strong class="text-slate-700">${exp.numeroCliente || 'N/A'}</strong></span>
+                        ${origenBadge}
+                    </div>
+                `;
+
+                let comentariosHtml = exp.comentarios ? `
+                    <div class="mt-3 bg-amber-50 border border-amber-200 rounded-lg p-2 text-xs text-amber-800 flex items-start gap-2 shadow-sm">
+                        <i class="ph ph-warning-circle text-amber-600 text-base flex-shrink-0 mt-0.5"></i>
+                        <div class="leading-snug"><strong>Notas del Admin:</strong><br/>${exp.comentarios}</div>
+                    </div>
+                ` : '';
+
+                if (!exp.completado) {
+                    card.className = "border border-slate-200 bg-slate-50 p-4 rounded-xl opacity-80 relative";
+                    card.innerHTML = `
+                        <div class="flex items-center gap-2 mb-1 text-slate-500">
+                            <i class="ph ph-lock-key text-xl"></i> <span class="text-xs font-bold uppercase tracking-wider">En revisión</span>
+                        </div>
+                        <h4 class="font-bold text-slate-700 text-lg line-clamp-1" title="${exp.nombreCliente}">${exp.nombreCliente}</h4>
+                        ${metadataHtml}
+                        <p class="text-xs text-slate-500 mt-2">Espera a que el admin habilite el expediente.</p>
+                        ${comentariosHtml}
+                    `;
+                } else if (citaExistente) {
+                    card.className = "border border-green-200 bg-green-50 p-4 rounded-xl relative overflow-hidden";
+                    card.innerHTML = `
+                        <div class="absolute top-0 left-0 w-1 h-full bg-green-500"></div>
+                        <div class="flex items-center gap-2 mb-1 text-green-600">
+                            <i class="ph ph-check-circle text-xl"></i> <span class="text-xs font-bold uppercase tracking-wider">Agendado</span>
+                        </div>
+                        <h4 class="font-bold text-slate-800 text-lg line-clamp-1" title="${exp.nombreCliente}">${exp.nombreCliente}</h4>
+                        ${metadataHtml}
+                        <div class="mt-2 bg-white rounded p-2 text-xs font-medium text-slate-700 shadow-sm border border-green-100 flex items-center gap-2">
+                            <i class="ph ph-calendar-blank text-green-500"></i> ${formatDate(citaExistente.fecha)} - ${citaExistente.hora}
+                        </div>
+                        ${comentariosHtml}
+                    `;
+                } else {
+                    const isSelected = activeExpedienteId === exp.id;
+                    card.className = `border p-4 rounded-xl cursor-pointer transition-all ${isSelected ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200 shadow-md' : 'border-blue-200 bg-white hover:border-blue-400 hover:shadow-md'}`;
+                    card.onclick = () => seleccionarParaAgendar(exp.id, exp.nombreCliente);
+                    card.innerHTML = `
+                        <div class="flex items-center gap-2 mb-1 ${isSelected ? 'text-blue-600' : 'text-blue-500'}">
+                            <i class="ph ph-calendar-plus text-xl"></i> <span class="text-xs font-bold uppercase tracking-wider">Listo para agendar</span>
+                        </div>
+                        <h4 class="font-bold text-slate-800 text-lg line-clamp-1" title="${exp.nombreCliente}">${exp.nombreCliente}</h4>
+                        ${metadataHtml}
+                        ${comentariosHtml}
+                        <button class="mt-3 w-full py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm ${isSelected ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'}">
+                            ${isSelected ? 'Seleccionado para agendar' : 'Elegir horario de cita'}
+                        </button>
+                    `;
+                }
+                expedientesList.appendChild(card);
+            });
+        }
+
+        window.seleccionarParaAgendar = (expId, clienteNombre) => {
+            activeExpedienteId = expId;
+            activeExpedienteNombre = clienteNombre;
+            updateAsesorState();
+            
+            document.getElementById('active-client-label').textContent = clienteNombre;
+            document.getElementById('btn-cancel-client').classList.remove('hidden');
+            
+            const overlay = document.getElementById('agendar-overlay');
+            overlay.classList.add('opacity-0');
+            setTimeout(() => overlay.classList.add('hidden'), 300);
+            
+            renderGoogleCalendar();
+            document.getElementById('active-client-label').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        };
+
+        window.cancelarSeleccionCliente = () => {
+            activeExpedienteId = null;
+            activeExpedienteNombre = null;
+            if(currentUserRole === 'asesor') updateAsesorState();
+            
+            document.getElementById('active-client-label').textContent = 'Ninguno';
+            document.getElementById('btn-cancel-client').classList.add('hidden');
+            
+            const overlay = document.getElementById('agendar-overlay');
+            overlay.classList.remove('hidden');
+            setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+        };
+
+        function renderMisCitas() {
+            if (currentUserRole !== 'asesor' || !currentAsesor) return;
+
+            const listContainer = document.getElementById('mis-citas-list');
+            const emptyState = document.getElementById('mis-citas-empty');
+            listContainer.innerHTML = '';
+
+            const misCitas = allCitas.filter(c => c.asesorId === currentAsesor.id);
+            misCitas.sort((a, b) => new Date(`${a.fecha}T${a.hora}`) - new Date(`${b.fecha}T${b.hora}`));
+
+            if (misCitas.length === 0) {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+                misCitas.forEach(cita => {
+                    const card = document.createElement('div');
+                    card.className = "bg-white border border-slate-200 p-4 rounded-xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden";
+                    card.innerHTML = `
+                        <div class="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="text-xs font-bold px-2 py-1 bg-slate-100 text-slate-600 rounded">Cliente</span>
+                        </div>
+                        <h4 class="font-bold text-slate-800 text-lg line-clamp-1 mb-2" title="${cita.nombreCliente}">${cita.nombreCliente}</h4>
+                        <div class="flex items-center gap-2 text-slate-700 font-bold text-sm">
+                            <i class="ph ph-calendar-blank text-blue-500"></i> ${formatDate(cita.fecha)}
+                        </div>
+                        <div class="flex items-center gap-2 text-slate-600 font-medium text-sm mt-1">
+                            <i class="ph ph-clock"></i> ${cita.hora}
+                        </div>
+                    `;
+                    listContainer.appendChild(card);
+                });
+            }
+        }
+
+        // ==========================================
+        // Business Logic & Actions (Local Storage Mode)
+        // ==========================================
+
+        window.toggleExpediente = (expedienteId, status) => {
+            const exp = allExpedientes.find(e => e.id === expedienteId);
+            if (exp) {
+                exp.completado = status;
+                saveData();
+                showToast("Estado de expediente actualizado.", "success");
+            }
+        };
+
+        window.liberarCita = (citaId) => {
+            if (!confirm("¿Estás seguro de liberar esta hora de cita?")) return; 
+            allCitas = allCitas.filter(c => c.id !== citaId);
+            saveData();
+            showToast("Cita liberada exitosamente.", "success");
+        };
+
+        window.createNewAsesor = () => {
+            const nameInput = document.getElementById('new-asesor-name');
+            const nombre = nameInput.value.trim();
+            if(!nombre) {
+                showToast('Ingresa un nombre para el asesor', 'error');
+                return;
+            }
+            
+            allAsesores.push({ id: generateId(), nombre: nombre });
+            saveData();
+            
+            nameInput.value = '';
+            showToast('Asesor agregado correctamente', 'success');
+        };
+
+        window.promptDeleteAsesor = (id) => {
+            pendingDeleteAsesorId = id;
+            const modal = document.getElementById('delete-modal');
+            const modalContent = document.getElementById('delete-modal-content');
+            
+            modal.classList.remove('hidden');
+            requestAnimationFrame(() => {
+                modalContent.classList.remove('scale-95', 'opacity-0');
+                modalContent.classList.add('scale-100', 'opacity-100');
+            });
+        };
+
+        window.closeDeleteModal = () => {
+            const modal = document.getElementById('delete-modal');
+            const modalContent = document.getElementById('delete-modal-content');
+            
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            modalContent.classList.add('scale-95', 'opacity-0');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                pendingDeleteAsesorId = null;
+            }, 200); 
+        };
+
+        window.executeDeleteAsesor = () => {
+            if(!pendingDeleteAsesorId) return;
+            allAsesores = allAsesores.filter(a => a.id !== pendingDeleteAsesorId);
+            saveData();
+            showToast('Asesor eliminado exitosamente', 'success');
+            closeDeleteModal();
+        };
+
+        window.togglePrecioTraslado = () => {
+            const origen = document.getElementById('new-exp-origen').value;
+            const containerPrecio = document.getElementById('container-precio-traslado');
+            if (origen === 'intercambio') {
+                containerPrecio.classList.remove('hidden');
+            } else {
+                containerPrecio.classList.add('hidden');
+                document.getElementById('new-exp-precio').value = ''; 
+            }
+        };
+
+        window.createNewExpediente = () => {
+            const clienteInput = document.getElementById('new-exp-cliente');
+            const inventarioInput = document.getElementById('new-exp-inventario');
+            const numClienteInput = document.getElementById('new-exp-num-cliente');
+            const asesorSelect = document.getElementById('new-exp-asesor');
+            const origenSelect = document.getElementById('new-exp-origen');
+            const precioInput = document.getElementById('new-exp-precio');
+            
+            const nombreCliente = clienteInput.value.trim();
+            const inventario = inventarioInput.value.trim();
+            const numeroCliente = numClienteInput.value.trim();
+            const asesorId = asesorSelect.value;
+            const origen = origenSelect.value;
+            const precioTraslado = origen === 'intercambio' ? precioInput.value.trim() : '';
+
+            if(!nombreCliente || !asesorId) {
+                showToast('Ingresa el nombre del cliente y selecciona un asesor', 'error');
+                return;
+            }
+
+            allExpedientes.push({
+                id: generateId(),
+                nombreCliente: nombreCliente,
+                inventario: inventario,
+                numeroCliente: numeroCliente,
+                origen: origen,
+                precioTraslado: precioTraslado,
+                comentarios: '',
+                asesorId: asesorId,
+                completado: false 
+            });
+            saveData();
+
+            clienteInput.value = '';
+            inventarioInput.value = '';
+            numClienteInput.value = '';
+            asesorSelect.value = '';
+            precioInput.value = '';
+            origenSelect.value = 'planta';
+            togglePrecioTraslado();
+            showToast('Expediente creado y asignado', 'success');
+        };
+
+        window.openComentariosModal = (expId) => {
+            const exp = allExpedientes.find(e => e.id === expId);
+            if(!exp) return;
+            
+            document.getElementById('comentarios-exp-id').value = exp.id;
+            document.getElementById('comentarios-texto').value = exp.comentarios || '';
+            
+            const modal = document.getElementById('comentarios-modal');
+            const modalContent = document.getElementById('comentarios-modal-content');
+            
+            modal.classList.remove('hidden');
+            requestAnimationFrame(() => {
+                modalContent.classList.remove('scale-95', 'opacity-0');
+                modalContent.classList.add('scale-100', 'opacity-100');
+            });
+        };
+
+        window.closeComentariosModal = () => {
+            const modal = document.getElementById('comentarios-modal');
+            const modalContent = document.getElementById('comentarios-modal-content');
+            
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            modalContent.classList.add('scale-95', 'opacity-0');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 200); 
+        };
+
+        window.saveComentarios = () => {
+            const expId = document.getElementById('comentarios-exp-id').value;
+            const comentarios = document.getElementById('comentarios-texto').value.trim();
+            
+            if(!expId) return;
+
+            const exp = allExpedientes.find(e => e.id === expId);
+            if(exp) {
+                exp.comentarios = comentarios;
+                saveData();
+                showToast('Comentarios guardados', 'success');
+                closeComentariosModal();
+            }
+        };
+
+        // Lógica del Google Calendar Clone
+        // ==========================================
+
+        window.renderGoogleCalendar = () => {
+            if (currentUserRole !== 'asesor') return;
+            renderMiniCalendar();
+            renderWeekView();
+        };
+
+        const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+        const dayNamesMini = ["D", "L", "M", "M", "J", "V", "S"];
+        const dayNamesWeek = ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"];
+
+        function formatDate(dateStr) {
+            const [y, m, d] = dateStr.split('-');
+            return `${d}/${m}/${y}`;
+        }
+
+        window.changeMiniCalMonth = (dir) => {
+            miniCalDate.setMonth(miniCalDate.getMonth() + dir);
+            renderMiniCalendar();
+        };
+
+        window.changeWeekView = (days) => {
+            viewDate.setDate(viewDate.getDate() + days);
+            miniCalDate = new Date(viewDate);
+            renderGoogleCalendar();
+        };
+
+        window.resetToToday = () => {
+            viewDate = new Date();
+            miniCalDate = new Date();
+            renderGoogleCalendar();
+        };
+
+        window.changeAdminWeekView = (days) => {
+            adminViewDate.setDate(adminViewDate.getDate() + days);
+            renderAdminDashboard();
+        };
+
+        window.resetAdminToToday = () => {
+            adminViewDate = new Date();
+            renderAdminDashboard();
+        };
+
+        window.jumpToDate = (year, month, day) => {
+            viewDate = new Date(year, month, day);
+            renderGoogleCalendar();
+        };
+
+        function renderMiniCalendar() {
+            const year = miniCalDate.getFullYear();
+            const month = miniCalDate.getMonth();
+            
+            document.getElementById('mini-cal-month-year').textContent = `${monthNames[month]} ${year}`;
+            
+            const grid = document.getElementById('mini-cal-grid');
+            grid.innerHTML = '';
+
+            const firstDayOfMonth = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+            for (let i = 0; i < firstDayOfMonth; i++) {
+                const dayNum = daysInPrevMonth - firstDayOfMonth + i + 1;
+                grid.innerHTML += `<div class="p-1 text-slate-300">${dayNum}</div>`;
+            }
+
+            const viewDateStr = getLocalISODate(viewDate);
+            
+            for (let i = 1; i <= daysInMonth; i++) {
+                const iterDate = new Date(year, month, i);
+                const iterDateStr = getLocalISODate(iterDate);
+                
+                let classes = "p-1 rounded-full cursor-pointer hover:bg-slate-100 transition-colors w-7 h-7 mx-auto flex items-center justify-center ";
+                
+                if (iterDateStr === todayStr) {
+                    classes += "text-blue-600 font-bold bg-blue-50";
+                } else if (iterDateStr === viewDateStr) {
+                    classes += "bg-blue-600 text-white font-bold hover:bg-blue-700";
+                } else {
+                    classes += "text-slate-700";
+                }
+
+                grid.innerHTML += `<div class="${classes}" onclick="jumpToDate(${year}, ${month}, ${i})">${i}</div>`;
+            }
+        }
+
+        function formatTime12h(time24) {
+            const [h, m] = time24.split(':');
+            let hours = parseInt(h);
+            const ampm = hours >= 12 ? 'pm' : 'am';
+            hours = hours % 12;
+            hours = hours ? hours : 12;
+            return `${hours}:${m}${ampm}`;
+        }
+
+        function getReadableDate(dateStr) {
+            const [y, m, d] = dateStr.split('-');
+            const date = new Date(y, parseInt(m)-1, d);
+            return `${date.getDate()} de ${monthNames[date.getMonth()]} de ${date.getFullYear()}`;
+        }
+
+        function renderAdminCalendarView() {
+            const container = document.getElementById('admin-calendar-grid');
+            if(!container) return;
+            container.innerHTML = '';
+            
+            const availableHours = ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"];
+
+            for(let i = 0; i < 7; i++) {
+                let colDate = new Date(adminViewDate.getFullYear(), adminViewDate.getMonth(), adminViewDate.getDate() + i);
+                let colDateStr = getLocalISODate(colDate);
+                let isToday = colDateStr === todayStr;
+
+                let col = document.createElement('div');
+                col.className = "flex-1 flex flex-col min-w-[120px]";
+
+                let header = `
+                    <div class="flex flex-col items-center mb-4 pb-2 border-b border-slate-100">
+                        <div class="text-xs text-slate-500 font-medium mb-1">${dayNamesWeek[colDate.getDay()]}</div>
+                        <div class="text-2xl w-10 h-10 flex items-center justify-center rounded-full ${isToday ? 'bg-purple-600 text-white font-semibold shadow-md' : 'text-slate-700'}">${colDate.getDate()}</div>
+                    </div>
+                `;
+                col.innerHTML = header;
+
+                availableHours.forEach(hora => {
+                    const cita = allCitas.find(c => c.fecha === colDateStr && c.hora === hora);
+                    
+                    let slotHtml = '';
+                    if (cita) {
+                        slotHtml = `
+                            <div class="mb-2 p-3 rounded-xl bg-indigo-50 border border-indigo-200 text-xs shadow-sm relative group transition-all hover:shadow-md">
+                                <div class="font-bold text-indigo-800 mb-1 flex items-center gap-1"><i class="ph ph-clock text-sm"></i> ${formatTime12h(hora)}</div>
+                                <div class="text-slate-800 font-bold line-clamp-1 mb-1" title="${cita.nombreCliente}">${cita.nombreCliente}</div>
+                                <div class="text-slate-500 line-clamp-1 mt-0.5 flex items-center gap-1"><i class="ph ph-user-circle"></i> ${cita.asesorNombre}</div>
+                                
+                                <button onclick="liberarCita('${cita.id}')" class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 text-red-500 hover:text-white bg-white hover:bg-red-500 p-1.5 rounded-md shadow-sm transition-all" title="Cancelar Cita">
+                                    <i class="ph ph-trash"></i>
+                                </button>
+                            </div>
+                        `;
+                    } else {
+                        slotHtml = `
+                            <div class="mb-2 h-14 rounded-xl border border-dashed border-slate-200 flex items-center justify-center text-slate-300 text-xs font-medium bg-slate-50/50">
+                                ${formatTime12h(hora)}
+                            </div>
+                        `;
+                    }
+                    col.insertAdjacentHTML('beforeend', slotHtml);
+                });
+                container.appendChild(col);
+            }
+        }
+
+        function renderWeekView() {
+            const container = document.getElementById('week-columns');
+            container.innerHTML = '';
+            
+            const availableHours = ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"];
+
+            for(let i = 0; i < 7; i++) {
+                let colDate = new Date(viewDate.getFullYear(), viewDate.getMonth(), viewDate.getDate() + i);
+                let colDateStr = getLocalISODate(colDate);
+                let isToday = colDateStr === todayStr;
+
+                let col = document.createElement('div');
+                col.className = "flex-1 flex flex-col items-center min-w-[120px]";
+
+                let header = `
+                    <div class="text-xs text-slate-500 font-medium mb-1">${dayNamesWeek[colDate.getDay()]}</div>
+                    <div class="text-2xl mb-4 w-10 h-10 flex items-center justify-center rounded-full ${isToday ? 'bg-blue-600 text-white font-semibold' : 'text-slate-700'}">${colDate.getDate()}</div>
+                `;
+                col.innerHTML = header;
+
+                availableHours.forEach(hora => {
+                    const isPast = colDateStr < todayStr;
+                    const isTaken = allCitas.some(c => c.fecha === colDateStr && c.hora === hora);
+                    
+                    let btnHtml = '';
+
+                    if (isPast || isTaken) {
+                        btnHtml = `<div class="h-10 w-full flex items-center justify-center text-slate-300 font-light mb-2">—</div>`;
+                    } else {
+                        btnHtml = `
+                            <button onclick="iniciarAgendado('${colDateStr}', '${hora}')" 
+                                class="h-9 w-[90%] flex items-center justify-center rounded-full bg-white text-blue-600 border border-slate-300 hover:border-blue-600 hover:bg-slate-50 mb-3 text-sm font-medium transition-all">
+                                ${formatTime12h(hora)}
+                            </button>
+                        `;
+                    }
+                    col.insertAdjacentHTML('beforeend', btnHtml);
+                });
+                container.appendChild(col);
+            }
+        }
+
+        window.iniciarAgendado = (fecha, hora) => {
+            if (!activeExpedienteId) {
+                showToast("Por favor, selecciona un cliente de la lista primero.", "error");
+                return;
+            }
+
+            const isTaken = allCitas.some(c => c.fecha === fecha && c.hora === hora);
+            if (isTaken) {
+                showToast("Esa hora acaba de ser reservada por alguien más.", "error");
+                return;
+            }
+
+            pendingCita = { expedienteId: activeExpedienteId, clienteNombre: activeExpedienteNombre, fecha, hora };
+            
+            document.getElementById('modal-cliente-txt').textContent = activeExpedienteNombre;
+            document.getElementById('modal-fecha-txt').textContent = getReadableDate(fecha);
+            document.getElementById('modal-hora-txt').textContent = formatTime12h(hora);
+
+            const modal = document.getElementById('confirm-modal');
+            const modalContent = document.getElementById('confirm-modal-content');
+            
+            modal.classList.remove('hidden');
+            requestAnimationFrame(() => {
+                modalContent.classList.remove('scale-95', 'opacity-0');
+                modalContent.classList.add('scale-100', 'opacity-100');
+            });
+        };
+
+        window.closeConfirmModal = () => {
+            const modal = document.getElementById('confirm-modal');
+            const modalContent = document.getElementById('confirm-modal-content');
+            
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            modalContent.classList.add('scale-95', 'opacity-0');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                pendingCita = null;
+            }, 200); 
+        };
+
+        window.executeAgendar = () => {
+            if (!pendingCita || !currentAsesor) return;
+
+            allCitas.push({
+                id: generateId(),
+                asesorId: currentAsesor.id,
+                asesorNombre: currentAsesor.nombre,
+                expedienteId: pendingCita.expedienteId,
+                nombreCliente: pendingCita.clienteNombre,
+                fecha: pendingCita.fecha,
+                hora: pendingCita.hora,
+                createdAt: new Date().toISOString()
+            });
+            saveData();
+
+            showToast("¡Cita agendada exitosamente!", "success");
+            closeConfirmModal();
+            cancelarSeleccionCliente(); 
+        };
+
+        // Iniciar
+        window.addEventListener('DOMContentLoaded', () => {
+            initApp();
+        });
+
+    </script>
+</body>
+</html>
