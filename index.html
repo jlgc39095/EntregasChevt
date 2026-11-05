@@ -160,7 +160,7 @@
                 </button>
             </div>
 
-            <!-- NUEVO: Sección de Creación de Datos (Reemplaza el Excel/Sheets) -->
+            <!-- Sección de Creación de Datos -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <!-- Gestión de Asesores -->
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col">
@@ -176,7 +176,7 @@
                     </div>
                 </div>
 
-                <!-- Agregar Expediente (Fila del Sheet) -->
+                <!-- Agregar Expediente -->
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
                     <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><i class="ph ph-folder-plus text-purple-500"></i> Nuevo Expediente (Cliente)</h3>
                     <div class="flex flex-col gap-3">
@@ -216,6 +216,7 @@
                                     <th class="pb-3 font-semibold">Asesor</th>
                                     <th class="pb-3 font-semibold">Cliente (Detalles)</th>
                                     <th class="pb-3 font-semibold">Comentarios</th>
+                                    <th class="pb-3 font-semibold text-center">Acciones</th>
                                     <th class="pb-3 font-semibold text-center">Listo para agendar</th>
                                 </tr>
                             </thead>
@@ -377,7 +378,7 @@
 
     </section>
 
-    <!-- Modal de Confirmación -->
+    <!-- Modal de Confirmación para Agendar -->
     <div id="confirm-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm">
         <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl transform transition-all scale-95 opacity-0" id="confirm-modal-content">
             <h3 class="text-xl font-bold text-slate-800 mb-2">Confirmar Cita</h3>
@@ -462,6 +463,66 @@
         </div>
     </div>
 
+    <!-- Modal Eliminar Cita -->
+    <div id="delete-cita-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl transform transition-all scale-95 opacity-0" id="delete-cita-modal-content">
+            <h3 class="text-xl font-bold text-slate-800 mb-2">Cancelar Cita</h3>
+            <p class="text-slate-600 text-sm mb-6">¿Estás seguro de que deseas liberar este horario y cancelar la cita programada?</p>
+            <div class="flex justify-end gap-3">
+                <button onclick="closeDeleteCitaModal()" class="px-4 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition-colors">Volver</button>
+                <button onclick="executeDeleteCita()" class="px-4 py-2 bg-red-600 text-white font-medium hover:bg-red-700 rounded-lg shadow-md transition-colors flex items-center gap-2">
+                    <i class="ph ph-trash"></i> Cancelar Cita
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Eliminar Expediente -->
+    <div id="delete-exp-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl transform transition-all scale-95 opacity-0" id="delete-exp-modal-content">
+            <h3 class="text-xl font-bold text-slate-800 mb-2">Eliminar Expediente</h3>
+            <p class="text-slate-600 text-sm mb-6">¿Deseas eliminar este expediente y todas sus citas asociadas de forma permanente?</p>
+            <div class="flex justify-end gap-3">
+                <button onclick="closeDeleteExpedienteModal()" class="px-4 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition-colors">Cancelar</button>
+                <button onclick="executeDeleteExpediente()" class="px-4 py-2 bg-red-600 text-white font-medium hover:bg-red-700 rounded-lg shadow-md transition-colors flex items-center gap-2">
+                    <i class="ph ph-trash"></i> Eliminar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Editar Expediente -->
+    <div id="edit-exp-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl transform transition-all scale-95 opacity-0" id="edit-exp-modal-content">
+            <h3 class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2"><i class="ph ph-pencil-simple text-blue-500"></i> Editar Expediente</h3>
+            <div class="flex flex-col gap-3 mb-6">
+                <input type="text" id="edit-exp-cliente" placeholder="Nombre del Cliente / Folio" class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 w-full">
+                <div class="flex gap-2 w-full">
+                    <input type="text" id="edit-exp-inventario" placeholder="Inventario (Ej. VIN/Lote)" class="flex-1 min-w-0 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                    <input type="text" id="edit-exp-num-cliente" placeholder="No. Cliente" class="flex-1 min-w-0 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                </div>
+                <div class="flex gap-2 w-full">
+                    <select id="edit-exp-origen" onchange="toggleEditPrecioTraslado()" class="flex-1 min-w-0 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white">
+                        <option value="planta">De Planta</option>
+                        <option value="intercambio">De Intercambio</option>
+                    </select>
+                    <div id="edit-container-precio-traslado" class="hidden flex-1 min-w-0">
+                        <input type="number" id="edit-exp-precio" placeholder="Precio Traslado ($)" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                    </div>
+                </div>
+                <select id="edit-exp-asesor" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white">
+                    <option value="">Selecciona un Asesor...</option>
+                </select>
+            </div>
+            <div class="flex justify-end gap-3">
+                <button onclick="closeEditExpedienteModal()" class="px-4 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition-colors">Cancelar</button>
+                <button onclick="saveEditExpediente()" class="px-4 py-2 bg-blue-600 text-white font-medium hover:bg-blue-700 rounded-lg shadow-md transition-colors flex items-center gap-2">
+                    <i class="ph ph-floppy-disk"></i> Guardar Cambios
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Storage & Application Logic -->
     <script>
         // ==========================================
@@ -528,8 +589,6 @@
         const LS_CITAS = 'crm_citas_v1';
 
         // URL de Google Apps Script (Base de datos en Drive)
-        // Pega aquí la URL que obtuviste de Google Apps Script (Ej. "https://script.google.com/macros/s/.../exec")
-        // Si la dejas vacía, el sistema seguirá usando la memoria local de tu navegador sin romperse.
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzb1dh4Xg2Xwd8OoMHjXGwp7z7rTcppz20UJ0PSqoFu9ijSD9U--Dp13jKAXRiWq_wohg/exec"; 
 
         // Global State
@@ -553,11 +612,14 @@
         let miniCalDate = new Date();
         let adminViewDate = new Date(); 
         
-        // Selección para agendar
+        // Selección para agendar / Estados de Edición y Borrado
         let activeExpedienteId = null;
         let activeExpedienteNombre = null;
         let pendingCita = null; 
         let pendingDeleteAsesorId = null;
+        let pendingDeleteCitaId = null;
+        let pendingDeleteExpedienteId = null;
+        let editingExpedienteId = null;
 
         // Cargar datos (De Drive o Local)
         async function loadData() {
@@ -585,11 +647,10 @@
                     return;
                 } catch (error) {
                     console.warn("Fallo al conectar con Google Drive, usando almacenamiento local:", error);
-                    // No mostramos alerta aquí para no asustar al usuario; el fallback se encargará.
                 }
             }
             
-            // Fallback si no hay URL, falla el internet, o da error de permisos (Modo Seguro)
+            // Fallback
             try {
                 allAsesores = JSON.parse(localStorage.getItem(LS_ASESORES)) || [];
                 allExpedientes = JSON.parse(localStorage.getItem(LS_EXPEDIENTES)) || [];
@@ -604,29 +665,20 @@
 
         // Guardar datos y actualizar vistas
         function saveData() {
-            // 1. Guardado Inmediato Local y Actualización de UI (Para que sea súper rápido)
             localStorage.setItem(LS_ASESORES, JSON.stringify(allAsesores));
             localStorage.setItem(LS_EXPEDIENTES, JSON.stringify(allExpedientes));
             localStorage.setItem(LS_CITAS, JSON.stringify(allCitas));
             updateViews();
 
-            // 2. Sincronización en segundo plano con la carpeta de Google Drive
             if (GOOGLE_SCRIPT_URL) {
-                const payload = {
-                    asesores: allAsesores,
-                    expedientes: allExpedientes,
-                    citas: allCitas
-                };
+                const payload = { asesores: allAsesores, expedientes: allExpedientes, citas: allCitas };
                 
-                // mode: 'no-cors' permite enviar datos a Google de forma silenciosa sin que el navegador bloquee la petición
                 fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
                     mode: 'no-cors',
                     headers: { 'Content-Type': 'text/plain' },
                     body: JSON.stringify(payload)
-                }).catch(error => {
-                    console.error("Error sincronizando con Drive:", error);
-                });
+                }).catch(error => console.error("Error sincronizando con Drive:", error));
             }
         }
 
@@ -643,31 +695,21 @@
         async function initApp() {
             try {
                 await loadData();
-                
-                // Sembrar datos de prueba si está vacío la primera vez
+                // Datos iniciales si está vacío
                 if (allAsesores.length === 0 && allExpedientes.length === 0) {
                     const id1 = generateId();
                     const id2 = generateId();
-                    
-                    allAsesores.push(
-                        { id: id1, nombre: "Carlos Slim" },
-                        { id: id2, nombre: "María Antonieta" }
-                    );
-                    
+                    allAsesores.push({ id: id1, nombre: "Carlos Slim" }, { id: id2, nombre: "María Antonieta" });
                     allExpedientes.push(
                         { id: generateId(), asesorId: id1, nombreCliente: "Empresa Automotriz Alfa", inventario: "VIN123", numeroCliente: "CTE-001", origen: "planta", completado: false },
                         { id: generateId(), asesorId: id1, nombreCliente: "Grupo Textil Omega", inventario: "LOTE45", numeroCliente: "CTE-002", origen: "intercambio", precioTraslado: "1500", completado: true },
                         { id: generateId(), asesorId: id2, nombreCliente: "Constructora Beta", inventario: "VIN889", numeroCliente: "CTE-003", origen: "planta", completado: false }
                     );
-                    
                     saveData();
                 }
-
             } catch (error) {
                 console.error("Init Error:", error);
-                showToast("Hubo un detalle al cargar, pero estás en modo seguro.", "error");
             } finally {
-                // CLAVE: Siempre ocultar la pantalla de carga, incluso si Google falló
                 document.getElementById('loading-state').classList.add('hidden');
                 document.getElementById('auth-state').classList.remove('hidden');
                 updateViews();
@@ -743,9 +785,7 @@
             modalContent.classList.remove('scale-100', 'opacity-100');
             modalContent.classList.add('scale-95', 'opacity-0');
             
-            setTimeout(() => {
-                modal.classList.add('hidden');
-            }, 200); 
+            setTimeout(() => modal.classList.add('hidden'), 200); 
         };
 
         window.verifyAdminCredentials = () => {
@@ -814,6 +854,12 @@
                         <button onclick="openComentariosModal('${expediente.id}')" class="text-xs px-2 py-1 rounded border ${expediente.comentarios ? 'border-amber-300 bg-amber-50 text-amber-700' : 'border-slate-200 bg-slate-50 text-slate-500'} hover:bg-slate-100 transition-colors flex items-center gap-1 w-max">
                             <i class="ph ph-chat-text text-sm"></i> ${expediente.comentarios ? 'Ver / Editar' : 'Agregar nota'}
                         </button>
+                    </td>
+                    <td class="py-3 text-center">
+                        <div class="flex items-center justify-center gap-2">
+                            <button onclick="openEditExpedienteModal('${expediente.id}')" class="text-slate-400 hover:text-blue-600 bg-slate-50 hover:bg-blue-50 p-1.5 rounded-md transition-colors" title="Editar Expediente"><i class="ph ph-pencil-simple text-lg"></i></button>
+                            <button onclick="promptDeleteExpediente('${expediente.id}')" class="text-slate-400 hover:text-red-600 bg-slate-50 hover:bg-red-50 p-1.5 rounded-md transition-colors" title="Eliminar Expediente"><i class="ph ph-trash text-lg"></i></button>
+                        </div>
                     </td>
                     <td class="py-3 text-center">
                         <label class="relative inline-flex items-center cursor-pointer">
@@ -1005,7 +1051,7 @@
         }
 
         // ==========================================
-        // Business Logic & Actions (Local Storage Mode)
+        // Business Logic & Actions
         // ==========================================
 
         window.toggleExpediente = (expedienteId, status) => {
@@ -1017,12 +1063,167 @@
             }
         };
 
+        // --- Modals para Cancelar Cita, Editar/Borrar Expediente ---
+
         window.liberarCita = (citaId) => {
-            if (!confirm("¿Estás seguro de liberar esta hora de cita?")) return; 
-            allCitas = allCitas.filter(c => c.id !== citaId);
-            saveData();
-            showToast("Cita liberada exitosamente.", "success");
+            pendingDeleteCitaId = citaId;
+            const modal = document.getElementById('delete-cita-modal');
+            const modalContent = document.getElementById('delete-cita-modal-content');
+            
+            modal.classList.remove('hidden');
+            requestAnimationFrame(() => {
+                modalContent.classList.remove('scale-95', 'opacity-0');
+                modalContent.classList.add('scale-100', 'opacity-100');
+            });
         };
+
+        window.closeDeleteCitaModal = () => {
+            const modal = document.getElementById('delete-cita-modal');
+            const modalContent = document.getElementById('delete-cita-modal-content');
+            
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            modalContent.classList.add('scale-95', 'opacity-0');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                pendingDeleteCitaId = null;
+            }, 200); 
+        };
+
+        window.executeDeleteCita = () => {
+            if (!pendingDeleteCitaId) return;
+            allCitas = allCitas.filter(c => c.id !== pendingDeleteCitaId);
+            saveData();
+            showToast("Cita cancelada exitosamente.", "success");
+            closeDeleteCitaModal();
+        };
+
+        window.promptDeleteExpediente = (id) => {
+            pendingDeleteExpedienteId = id;
+            const modal = document.getElementById('delete-exp-modal');
+            const modalContent = document.getElementById('delete-exp-modal-content');
+            
+            modal.classList.remove('hidden');
+            requestAnimationFrame(() => {
+                modalContent.classList.remove('scale-95', 'opacity-0');
+                modalContent.classList.add('scale-100', 'opacity-100');
+            });
+        };
+
+        window.closeDeleteExpedienteModal = () => {
+            const modal = document.getElementById('delete-exp-modal');
+            const modalContent = document.getElementById('delete-exp-modal-content');
+            
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            modalContent.classList.add('scale-95', 'opacity-0');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                pendingDeleteExpedienteId = null;
+            }, 200); 
+        };
+
+        window.executeDeleteExpediente = () => {
+            if (!pendingDeleteExpedienteId) return;
+            // Eliminar expediente
+            allExpedientes = allExpedientes.filter(e => e.id !== pendingDeleteExpedienteId);
+            // Liberar las citas que pertenecian a ese expediente
+            allCitas = allCitas.filter(c => c.expedienteId !== pendingDeleteExpedienteId);
+            
+            saveData();
+            showToast("Expediente eliminado exitosamente.", "success");
+            closeDeleteExpedienteModal();
+        };
+
+        window.openEditExpedienteModal = (id) => {
+            const exp = allExpedientes.find(e => e.id === id);
+            if (!exp) return;
+            editingExpedienteId = id;
+
+            const asesorSelect = document.getElementById('edit-exp-asesor');
+            asesorSelect.innerHTML = '<option value="">Selecciona un Asesor...</option>';
+            allAsesores.forEach(a => {
+                asesorSelect.innerHTML += `<option value="${a.id}">${a.nombre}</option>`;
+            });
+
+            document.getElementById('edit-exp-cliente').value = exp.nombreCliente;
+            document.getElementById('edit-exp-inventario').value = exp.inventario || '';
+            document.getElementById('edit-exp-num-cliente').value = exp.numeroCliente || '';
+            document.getElementById('edit-exp-asesor').value = exp.asesorId;
+            document.getElementById('edit-exp-origen').value = exp.origen || 'planta';
+            document.getElementById('edit-exp-precio').value = exp.precioTraslado || '';
+            
+            toggleEditPrecioTraslado();
+
+            const modal = document.getElementById('edit-exp-modal');
+            const modalContent = document.getElementById('edit-exp-modal-content');
+            
+            modal.classList.remove('hidden');
+            requestAnimationFrame(() => {
+                modalContent.classList.remove('scale-95', 'opacity-0');
+                modalContent.classList.add('scale-100', 'opacity-100');
+            });
+        };
+
+        window.closeEditExpedienteModal = () => {
+            const modal = document.getElementById('edit-exp-modal');
+            const modalContent = document.getElementById('edit-exp-modal-content');
+            
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            modalContent.classList.add('scale-95', 'opacity-0');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                editingExpedienteId = null;
+            }, 200); 
+        };
+
+        window.toggleEditPrecioTraslado = () => {
+            const origen = document.getElementById('edit-exp-origen').value;
+            const containerPrecio = document.getElementById('edit-container-precio-traslado');
+            if (origen === 'intercambio') {
+                containerPrecio.classList.remove('hidden');
+            } else {
+                containerPrecio.classList.add('hidden');
+                document.getElementById('edit-exp-precio').value = ''; 
+            }
+        };
+
+        window.saveEditExpediente = () => {
+            const exp = allExpedientes.find(e => e.id === editingExpedienteId);
+            if(!exp) return;
+
+            const clienteInput = document.getElementById('edit-exp-cliente').value.trim();
+            const asesorId = document.getElementById('edit-exp-asesor').value;
+            
+            if(!clienteInput || !asesorId) {
+                showToast('Ingresa el nombre del cliente y selecciona un asesor', 'error');
+                return;
+            }
+
+            exp.nombreCliente = clienteInput;
+            exp.inventario = document.getElementById('edit-exp-inventario').value.trim();
+            exp.numeroCliente = document.getElementById('edit-exp-num-cliente').value.trim();
+            exp.asesorId = asesorId;
+            exp.origen = document.getElementById('edit-exp-origen').value;
+            exp.precioTraslado = exp.origen === 'intercambio' ? document.getElementById('edit-exp-precio').value.trim() : '';
+
+            // Update Cita if it exists
+            const asesorObj = allAsesores.find(a => a.id === asesorId);
+            allCitas.forEach(cita => {
+                if (cita.expedienteId === exp.id) {
+                    cita.asesorId = asesorId;
+                    cita.asesorNombre = asesorObj ? asesorObj.nombre : 'Desconocido';
+                    cita.nombreCliente = clienteInput;
+                }
+            });
+
+            saveData();
+            showToast('Expediente actualizado exitosamente', 'success');
+            closeEditExpedienteModal();
+        };
+
+        // --- Fin Modals Editar/Borrar Expediente ---
 
         window.createNewAsesor = () => {
             const nameInput = document.getElementById('new-asesor-name');
@@ -1150,9 +1351,7 @@
             modalContent.classList.remove('scale-100', 'opacity-100');
             modalContent.classList.add('scale-95', 'opacity-0');
             
-            setTimeout(() => {
-                modal.classList.add('hidden');
-            }, 200); 
+            setTimeout(() => modal.classList.add('hidden'), 200); 
         };
 
         window.saveComentarios = () => {
