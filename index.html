@@ -280,6 +280,26 @@
                 </div>
             </div>
 
+            <!-- Listado de Refacciones y Accesorios -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><i class="ph ph-wrench text-orange-500"></i> Listado de Refacciones y Accesorios</h3>
+                <p class="text-slate-500 text-sm mb-4">Expedientes que requieren preparación de taller o instalación de accesorios.</p>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse min-w-[600px]">
+                        <thead>
+                            <tr class="border-b border-slate-200 text-slate-500 text-sm">
+                                <th class="pb-3 font-semibold w-1/4">Cliente</th>
+                                <th class="pb-3 font-semibold w-1/4">Inventario / No. Cte</th>
+                                <th class="pb-3 font-semibold w-2/4">Accesorios Registrados</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-refacciones-list">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <!-- Calendario General (Admin) -->
             <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
                 <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
@@ -919,6 +939,36 @@
                     citasList.appendChild(tr);
                 });
             }
+
+            // Poblado del Listado de Refacciones
+            const refaccionesList = document.getElementById('admin-refacciones-list');
+            if (refaccionesList) {
+                refaccionesList.innerHTML = '';
+                const expConAccesorios = allExpedientes.filter(e => e.accesorios && e.accesorios.trim() !== '');
+                
+                if (expConAccesorios.length === 0) {
+                    refaccionesList.innerHTML = `<tr><td colspan="3" class="py-6 text-center text-slate-400">No hay expedientes con accesorios registrados</td></tr>`;
+                } else {
+                    expConAccesorios.forEach(exp => {
+                        const tr = document.createElement('tr');
+                        tr.className = "border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors";
+                        tr.innerHTML = `
+                            <td class="py-3 font-bold text-slate-800 text-sm align-top pt-4">${exp.nombreCliente}</td>
+                            <td class="py-3 text-sm align-top pt-4">
+                                <div>Inv: <span class="font-medium text-slate-700">${exp.inventario || 'N/A'}</span></div>
+                                <div class="text-xs text-slate-500">Cte: ${exp.numeroCliente || 'N/A'}</div>
+                            </td>
+                            <td class="py-3 align-top pt-4">
+                                <div class="text-sm text-teal-700 bg-teal-50 px-2 py-1 rounded border border-teal-100 inline-block font-medium">
+                                    <i class="ph ph-wrench"></i> ${exp.accesorios}
+                                </div>
+                            </td>
+                        `;
+                        refaccionesList.appendChild(tr);
+                    });
+                }
+            }
+
             renderAdminCalendarView();
         }
 
@@ -1314,6 +1364,11 @@
                     hasPolarizado = true;
                 }
             }
+
+            // Calcular cuál es el día de mañana
+            const tomorrowObj = new Date(todayObj);
+            tomorrowObj.setDate(tomorrowObj.getDate() + 1);
+            const tomorrowStr = getLocalISODate(tomorrowObj);
             
             for(let i = 0; i < 7; i++) {
                 let colDate = new Date(viewDate.getFullYear(), viewDate.getMonth(), viewDate.getDate() + i);
@@ -1328,7 +1383,8 @@
 
                 // Máximo 5 entregas al día en total
                 const diaLleno = allCitas.filter(c => c.fecha === colDateStr).length >= 5;
-                const bloqueadoPorPolarizado = (colDateStr === todayStr && hasPolarizado);
+                // Bloquea si tiene polarizado y el día es HOY o MAÑANA
+                const bloqueadoPorPolarizado = (hasPolarizado && (colDateStr === todayStr || colDateStr === tomorrowStr));
 
                 TIME_SLOTS.forEach(hora => {
                     const isPast = colDateStr < todayStr;
@@ -1337,7 +1393,7 @@
                     if (isPast) {
                         col.insertAdjacentHTML('beforeend', `<div class="h-10 w-full flex items-center justify-center text-slate-300 font-light mb-2">—</div>`);
                     } else if (bloqueadoPorPolarizado) {
-                        col.insertAdjacentHTML('beforeend', `<div class="h-9 w-[90%] flex items-center justify-center text-amber-600 bg-amber-50 border border-amber-200 rounded-full font-medium text-[10px] mb-3 cursor-not-allowed leading-tight px-1 text-center" title="Polarizado requiere agendar con 24h de anticipación">Bloqueado (Polarizado)</div>`);
+                        col.insertAdjacentHTML('beforeend', `<div class="h-9 w-[90%] flex items-center justify-center text-amber-600 bg-amber-50 border border-amber-200 rounded-full font-medium text-[10px] mb-3 cursor-not-allowed leading-tight px-1 text-center" title="Polarizado requiere agendar con mayor anticipación">Bloqueado (Polarizado)</div>`);
                     } else if (diaLleno) {
                         col.insertAdjacentHTML('beforeend', `<div class="h-9 w-[90%] flex items-center justify-center text-red-400 bg-red-50 border border-red-100 rounded-full font-medium text-xs mb-3 cursor-not-allowed" title="Máximo de 5 entregas en total alcanzado en este día">Día Lleno</div>`);
                     } else {
@@ -1387,6 +1443,7 @@
                 createdAt: new Date().toISOString()
             });
             saveData();
+            
             showToast("¡Entrega agendada exitosamente!", "success");
             closeConfirmModal();
             cancelarSeleccionCliente(); 
